@@ -15,34 +15,60 @@ export default function ProfilePage() {
     onSuccess: () => setMessage("Profile saved.")
   });
 
+  function csv(value: FormDataEntryValue | null) {
+    return String(value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function buildProfile(form: FormData) {
+    if (user?.role === "company") {
+      return {
+        companyProfile: {
+          companyName: form.get("companyName"),
+          industry: form.get("industry"),
+          website: form.get("website"),
+          phone: form.get("phone"),
+          location: form.get("location"),
+          description: form.get("description")
+        }
+      };
+    }
+
+    if (user?.role === "mentor") {
+      return {
+        mentorProfile: {
+          expertise: form.get("expertise"),
+          organization: form.get("organization"),
+          yearsExperience: Number(form.get("yearsExperience") || 0),
+          website: form.get("website"),
+          phone: form.get("phone"),
+          location: form.get("location"),
+          topics: csv(form.get("topics")),
+          bio: form.get("bio")
+        }
+      };
+    }
+
+    return {
+      studentProfile: {
+        university: form.get("university"),
+        program: form.get("program"),
+        graduationYear: Number(form.get("graduationYear") || 0),
+        phone: form.get("phone"),
+        location: form.get("location"),
+        skills: csv(form.get("skills")),
+        cvUrl: form.get("cvUrl"),
+        bio: form.get("bio")
+      }
+    };
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const profile =
-      user?.role === "company"
-        ? {
-            companyProfile: {
-              companyName: form.get("companyName"),
-              industry: form.get("industry"),
-              website: form.get("website"),
-              phone: form.get("phone"),
-              location: form.get("location"),
-              description: form.get("description")
-            }
-          }
-        : {
-            studentProfile: {
-              university: form.get("university"),
-              program: form.get("program"),
-              graduationYear: Number(form.get("graduationYear") || 0),
-              phone: form.get("phone"),
-              location: form.get("location"),
-              skills: String(form.get("skills") || "").split(",").map((skill) => skill.trim()).filter(Boolean),
-              cvUrl: form.get("cvUrl"),
-              bio: form.get("bio")
-            }
-          };
-    update.mutate({ name: form.get("name"), ...profile });
+    update.mutate({ name: form.get("name"), ...buildProfile(form) });
   }
 
   return (
@@ -51,13 +77,25 @@ export default function ProfilePage() {
       {message && <p className="mb-4 rounded-md bg-brand/10 px-4 py-3 text-sm text-brand">{message}</p>}
       <form onSubmit={submit} className="max-w-2xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <input name="name" defaultValue={user?.name} placeholder="Name" className="focus-ring w-full rounded-md border border-slate-300 px-3 py-2" required />
-        {user?.role === "company" ? (
+        {user?.role === "company" && (
           <>
             <input name="companyName" placeholder="Company name" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
             <input name="industry" placeholder="Industry" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
             <input name="website" placeholder="Website" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
           </>
-        ) : (
+        )}
+
+        {user?.role === "mentor" && (
+          <>
+            <input name="expertise" placeholder="Your expertise (e.g. Software engineering)" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
+            <input name="organization" placeholder="Organization or independent" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
+            <input name="yearsExperience" type="number" min={0} placeholder="Years of experience" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
+            <input name="topics" placeholder="Topics you teach, comma separated" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
+            <input name="website" placeholder="Website or portfolio" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
+          </>
+        )}
+
+        {user?.role !== "company" && user?.role !== "mentor" && (
           <>
             <input name="university" placeholder="University" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
             <input name="program" placeholder="Program" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />

@@ -7,10 +7,11 @@ const validate = require("../middleware/validate");
 const router = express.Router();
 
 router.get("/", optionalProtect, listCourses);
+// Courses belong to mentors. The platform hosts them; it does not author them.
 router.post(
   "/",
   protect,
-  authorize("company", "admin"),
+  authorize("mentor", "admin"),
   [
     body("title").trim().isLength({ min: 3 }).withMessage("Title is required"),
     body("category").trim().notEmpty().withMessage("Category is required"),

@@ -25,7 +25,7 @@ const User = sequelize.define(
       allowNull: false
     },
     role: {
-      type: DataTypes.ENUM("student", "company", "admin"),
+      type: DataTypes.ENUM("student", "company", "mentor", "admin"),
       defaultValue: "student"
     },
     status: {
@@ -37,6 +37,10 @@ const User = sequelize.define(
       defaultValue: {}
     },
     companyProfile: {
+      type: DataTypes.JSONB,
+      defaultValue: {}
+    },
+    mentorProfile: {
       type: DataTypes.JSONB,
       defaultValue: {}
     }

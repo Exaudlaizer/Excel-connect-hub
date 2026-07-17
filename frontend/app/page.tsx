@@ -22,13 +22,13 @@ export default function HomePage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
             A practical network where youth find internships and jobs, companies recruit talent, small businesses
-            advertise, and training providers publish short courses.
+            advertise, and mentors offer their own courses.
           </p>
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
             {[
               { icon: BriefcaseBusiness, label: "Jobs and internships" },
               { icon: Megaphone, label: "SME marketplace" },
-              { icon: BookOpen, label: "Short courses" }
+              { icon: BookOpen, label: "Learn from mentors" }
             ].map((item) => {
               const Icon = item.icon;
               return (

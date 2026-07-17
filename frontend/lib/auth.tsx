@@ -3,7 +3,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 
-export type Role = "student" | "company" | "admin";
+export type Role = "student" | "company" | "mentor" | "admin";
+
+// Roles a visitor may pick at signup. Admins are provisioned server-side via
+// `npm run seed:admin`, so the API rejects "admin" here.
+export type SelfServiceRole = Exclude<Role, "admin">;
 
 export type AuthUser = {
   id: string;
@@ -16,7 +20,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: { name: string; email: string; password: string; role: Role }) => Promise<void>;
+  register: (payload: { name: string; email: string; password: string; role: SelfServiceRole }) => Promise<void>;
   logout: () => void;
 };
 
@@ -48,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     persist(data.token, data.user);
   }
 
-  async function register(payload: { name: string; email: string; password: string; role: Role }) {
+  async function register(payload: { name: string; email: string; password: string; role: SelfServiceRole }) {
     const data = await api<{ token: string; user: AuthUser }>("/auth/register", {
       method: "POST",
       body: JSON.stringify(payload)

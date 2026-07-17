@@ -2,6 +2,7 @@ const Ad = require("./Ad");
 const Application = require("./Application");
 const Course = require("./Course");
 const Job = require("./Job");
+const PasswordResetToken = require("./PasswordResetToken");
 const User = require("./User");
 
 User.hasMany(Job, { foreignKey: "companyId", as: "jobs" });
@@ -18,4 +19,8 @@ Ad.belongsTo(User, { foreignKey: "ownerId", as: "owner" });
 User.hasMany(Course, { foreignKey: "providerId", as: "courses" });
 Course.belongsTo(User, { foreignKey: "providerId", as: "provider" });
 
-module.exports = { Ad, Application, Course, Job, User };
+// Deleting a user must not strand reset tokens that could still be redeemed.
+User.hasMany(PasswordResetToken, { foreignKey: "userId", as: "resetTokens", onDelete: "CASCADE" });
+PasswordResetToken.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+module.exports = { Ad, Application, Course, Job, PasswordResetToken, User };

@@ -34,7 +34,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard label="Opportunities" value="Live" detail="Browse internships and jobs approved by admins" />
           <MetricCard label="Marketplace" value="Open" detail="Promote youth ventures and small businesses" />
-          <MetricCard label="Learning" value="Growing" detail="Enroll in practical short courses" />
+          <MetricCard label="Learning" value="Growing" detail="Learn directly from mentors" />
         </div>
       )}
 

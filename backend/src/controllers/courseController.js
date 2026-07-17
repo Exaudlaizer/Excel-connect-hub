@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const Course = require("../models/Course");
 const User = require("../models/User");
 
@@ -6,11 +7,19 @@ async function listCourses(req, res, next) {
     const where = {};
     if (req.query.category) where.category = req.query.category;
     if (req.query.status) where.status = req.query.status;
-    if (!req.user || req.user.role === "student") where.status = "approved";
+
+    // Visitors and learners only ever see approved courses. A mentor also sees
+    // their own drafts, so a course does not vanish while awaiting approval.
+    // Admins see everything.
+    if (!req.user || req.user.role === "student") {
+      where.status = "approved";
+    } else if (req.user.role === "mentor") {
+      where[Op.or] = [{ status: "approved" }, { providerId: req.user.id }];
+    }
 
     const courses = await Course.findAll({
       where,
-      include: [{ model: User, as: "provider", attributes: ["id", "name", "companyProfile"] }],
+      include: [{ model: User, as: "provider", attributes: ["id", "name", "mentorProfile"] }],
       order: [["createdAt", "DESC"]]
     });
     res.json({ courses });

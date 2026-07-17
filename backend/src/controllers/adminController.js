@@ -6,11 +6,12 @@ const User = require("../models/User");
 
 async function analytics(_req, res, next) {
   try {
-    const [users, students, companies, jobs, applications, ads, courses, pendingJobs, pendingAds, pendingCourses] =
+    const [users, students, companies, mentors, jobs, applications, ads, courses, pendingJobs, pendingAds, pendingCourses] =
       await Promise.all([
         User.count(),
         User.count({ where: { role: "student" } }),
         User.count({ where: { role: "company" } }),
+        User.count({ where: { role: "mentor" } }),
         Job.count(),
         Application.count(),
         Ad.count(),
@@ -25,6 +26,7 @@ async function analytics(_req, res, next) {
         users,
         students,
         companies,
+        mentors,
         jobs,
         applications,
         ads,

@@ -32,12 +32,15 @@ The required backend folders are present at `backend/config`, `backend/models`, 
 ## Features
 
 - JWT authentication with register, login, and role selection.
-- Role-based access for `student`, `company`, and `admin`.
+- Role-based access for `student`, `company`, `mentor`, and `admin`. Admin accounts
+  cannot be self-registered; they are provisioned with `npm run seed:admin`.
 - Student profile and CV URL management.
 - Company opportunity posting and applicant review APIs.
 - Job and internship listings with student applications.
 - Marketplace advertisements by category.
-- Learning hub with short course publishing and enrollment.
+- Learning hub where independent mentors publish their own courses and youth enroll.
+  The platform hosts mentors' courses; it does not author them.
+- Password recovery by emailed reset link (hashed, single-use, 60-minute expiry).
 - Admin analytics plus approval queues for jobs, ads, and courses.
 - Secure Express defaults: Helmet, CORS, rate limiting, bcrypt password hashing, request validation.
 - PostgreSQL database with Sequelize models and associations.
@@ -72,6 +75,19 @@ CLIENT_ORIGIN=http://localhost:3000
 
 In development, Sequelize runs `sync({ alter: true })` when the API starts. For production, use explicit migrations before deployment.
 
+### Create the first admin
+
+`POST /auth/register` only accepts the `student` and `company` roles, so the first
+administrator is created from the command line:
+
+```bash
+cd backend
+npm run seed:admin -- --email=admin@example.com --password=change-me-8-chars --name="Site Admin"
+```
+
+Re-running the command against an existing email promotes that account to admin and
+resets its password, which is also the way to recover a locked-out admin.
+
 ## Frontend Setup
 
 ```bash
@@ -93,10 +109,12 @@ Open `http://localhost:3000`.
 
 Base URL: `http://localhost:5000/api`
 
-- `POST /auth/register`
+- `POST /auth/register` (roles: `student`, `company`, `mentor`)
 - `POST /auth/login`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
 - `GET /auth/me`
-- `GET /users`
+- `GET /users` (supports `?role=`, `?status=`, `?q=`)
 - `PATCH /users/me`
 - `PATCH /users/:id/status`
 - `GET /jobs`
@@ -129,7 +147,7 @@ Authorization: Bearer <jwt-token>
 2. Create the `excel_connect_hub` database.
 3. Start the backend on port `5000`.
 4. Start the frontend on port `3000`.
-5. Register an admin account.
+5. Create the admin account with `npm run seed:admin` (see above).
 6. Register company and student accounts.
 7. Use the company account to post jobs and courses.
 8. Use the admin account to approve pending content.

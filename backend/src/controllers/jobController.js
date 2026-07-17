@@ -41,17 +41,47 @@ async function myJobs(req, res, next) {
   }
 }
 
+// Content fields an owning company may edit on its own listing. `status` and
+// `companyId` are excluded on purpose: passing req.body straight to update()
+// would let a company approve its own job and skip the admin queue.
+const EDITABLE_JOB_FIELDS = [
+  "title",
+  "type",
+  "location",
+  "workMode",
+  "description",
+  "requirements",
+  "salaryRange",
+  "deadline"
+];
+
+// A company may retire its own listing, but only an admin may approve or reject.
+const OWNER_STATUS_TRANSITIONS = ["closed"];
+
 async function updateJob(req, res, next) {
   try {
     const job = await Job.findByPk(req.params.id);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
+    const isAdmin = req.user.role === "admin";
     const ownsJob = job.companyId === req.user.id;
-    if (!ownsJob && req.user.role !== "admin") {
+    if (!ownsJob && !isAdmin) {
       return res.status(403).json({ message: "Cannot update this listing" });
     }
 
-    await job.update(req.body);
+    const updates = {};
+    EDITABLE_JOB_FIELDS.forEach((field) => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    if (req.body.status !== undefined) {
+      if (!isAdmin && !OWNER_STATUS_TRANSITIONS.includes(req.body.status)) {
+        return res.status(403).json({ message: "Only an admin can change the approval status" });
+      }
+      updates.status = req.body.status;
+    }
+
+    await job.update(updates);
     res.json({ job });
   } catch (error) {
     next(error);

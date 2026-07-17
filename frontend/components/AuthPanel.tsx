@@ -1,22 +1,25 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Building2, ShieldCheck, Loader2 } from "lucide-react";
-import { Role, useAuth } from "@/lib/auth";
+import { GraduationCap, Building2, Presentation, Loader2 } from "lucide-react";
+import { SelfServiceRole, useAuth } from "@/lib/auth";
 
 // The "youth" role maps to the backend `student` value so the API/DB stay unchanged.
-const roles: Array<{ value: Role; label: string; icon: React.ElementType }> = [
-  { value: "student", label: "Youth", icon: GraduationCap },
-  { value: "company", label: "Company", icon: Building2 },
-  { value: "admin", label: "Admin", icon: ShieldCheck }
+// Admin is intentionally not offered: the API rejects self-service admin signup,
+// and admins are provisioned with `npm run seed:admin`.
+const roles: Array<{ value: SelfServiceRole; label: string; hint: string; icon: React.ElementType }> = [
+  { value: "student", label: "Youth", hint: "Find work and learn", icon: GraduationCap },
+  { value: "company", label: "Company", hint: "Hire and advertise", icon: Building2 },
+  { value: "mentor", label: "Mentor", hint: "Offer your courses", icon: Presentation }
 ];
 
 export function AuthPanel() {
   const router = useRouter();
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("register");
-  const [role, setRole] = useState<Role>("student");
+  const [role, setRole] = useState<SelfServiceRole>("student");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -76,6 +79,8 @@ export function AuthPanel() {
                     <button
                       key={item.value}
                       type="button"
+                      aria-pressed={active}
+                      title={item.hint}
                       className={`focus-ring rounded-lg border px-2 py-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
                         active ? "border-brand bg-brand/10 text-brand shadow-gold" : "border-line text-slate-600 hover:border-brand/50"
                       }`}
@@ -87,6 +92,7 @@ export function AuthPanel() {
                   );
                 })}
               </div>
+              <p className="mt-2 text-xs text-muted">{roles.find((item) => item.value === role)?.hint}</p>
             </div>
           </>
         )}
@@ -99,6 +105,13 @@ export function AuthPanel() {
           Password
           <input name="password" type="password" minLength={8} className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" required />
         </label>
+        {mode === "login" && (
+          <div className="text-right">
+            <Link href="/forgot-password" className="focus-ring rounded text-sm font-medium text-brand hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+        )}
         {error && <p className="animate-fade-in rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button
           disabled={loading}

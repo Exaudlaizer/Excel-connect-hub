@@ -10,9 +10,15 @@ function publicUser(user) {
     role: user.role,
     status: user.status,
     studentProfile: user.studentProfile,
-    companyProfile: user.companyProfile
+    companyProfile: user.companyProfile,
+    mentorProfile: user.mentorProfile
   };
 }
+
+// Roles a visitor may claim for themselves. "admin" is deliberately absent:
+// self-service registration must never mint an administrator. Admins are
+// created out of band with `npm run seed:admin`.
+const SELF_SERVICE_ROLES = ["student", "company", "mentor"];
 
 async function register(req, res, next) {
   try {
@@ -23,7 +29,8 @@ async function register(req, res, next) {
       return res.status(409).json({ message: "Email is already registered" });
     }
 
-    const user = await User.create({ name, email, password, role });
+    const safeRole = SELF_SERVICE_ROLES.includes(role) ? role : "student";
+    const user = await User.create({ name, email, password, role: safeRole });
     res.status(201).json({
       token: signToken(user),
       user: publicUser(user)
@@ -59,4 +66,4 @@ async function me(req, res) {
   res.json({ user: publicUser(req.user) });
 }
 
-module.exports = { register, login, me, publicUser };
+module.exports = { register, login, me, publicUser, SELF_SERVICE_ROLES };

@@ -53,7 +53,7 @@ export default function AdminPage() {
     <Shell>
       <SectionHeader title="Admin Dashboard" subtitle="Monitor platform growth and review pending jobs, advertisements, and courses through approval endpoints." />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Students" value={data?.analytics.students ?? "-"} detail="Registered student users" />
+        <MetricCard label="Youth" value={data?.analytics.students ?? "-"} detail="Registered youth accounts" />
         <MetricCard label="Companies" value={data?.analytics.companies ?? "-"} detail="Recruiters and providers" />
         <MetricCard label="Courses" value={data?.analytics.courses ?? "-"} detail="Training listings" />
         <MetricCard label="Pending approvals" value={data?.analytics.pendingApprovals ?? "-"} detail="Requires moderation" />
@@ -85,7 +85,7 @@ export default function AdminPage() {
                   <p className="font-semibold text-ink">{row.title}</p>
                   <p className="text-sm text-muted">{row.meta}</p>
                   <div className="mt-3 flex gap-2">
-                    <button onClick={() => approve.mutate({ path: group.path(row.id), status: "approved" })} className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+                    <button onClick={() => approve.mutate({ path: group.path(row.id), status: "approved" })} className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-night">
                       Approve
                     </button>
                     <button onClick={() => approve.mutate({ path: group.path(row.id), status: "rejected" })} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700">

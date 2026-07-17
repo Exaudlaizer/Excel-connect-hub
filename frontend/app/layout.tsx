@@ -3,8 +3,8 @@ import "./globals.css";
 import { AppProviders } from "@/components/AppProviders";
 
 export const metadata: Metadata = {
-  title: "Excel Connect Hub",
-  description: "Student, business, learning, and recruitment ecosystem for Tanzania"
+  title: "Excel Smartic",
+  description: "Youth, business, learning, and recruitment ecosystem for Tanzania"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

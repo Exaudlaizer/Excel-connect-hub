@@ -47,8 +47,8 @@ export default function ProfilePage() {
 
   return (
     <Shell>
-      <SectionHeader title="Profile" subtitle="Keep your student CV details or company profile ready for applications, recruiting, and marketplace trust." />
-      {message && <p className="mb-4 rounded-md bg-teal-50 px-4 py-3 text-sm text-brand">{message}</p>}
+      <SectionHeader title="Profile" subtitle="Keep your CV details or company profile ready for applications, recruiting, and marketplace trust." />
+      {message && <p className="mb-4 rounded-md bg-brand/10 px-4 py-3 text-sm text-brand">{message}</p>}
       <form onSubmit={submit} className="max-w-2xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <input name="name" defaultValue={user?.name} placeholder="Name" className="focus-ring w-full rounded-md border border-slate-300 px-3 py-2" required />
         {user?.role === "company" ? (
@@ -71,7 +71,7 @@ export default function ProfilePage() {
           <input name="location" placeholder="Location" className="focus-ring rounded-md border border-slate-300 px-3 py-2" />
         </div>
         <textarea name={user?.role === "company" ? "description" : "bio"} placeholder="About" rows={5} className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
-        <button className="focus-ring mt-3 rounded-md bg-brand px-4 py-2 font-semibold text-white">Save profile</button>
+        <button className="focus-ring mt-3 rounded-md bg-brand px-4 py-2 font-semibold text-night">Save profile</button>
       </form>
     </Shell>
   );

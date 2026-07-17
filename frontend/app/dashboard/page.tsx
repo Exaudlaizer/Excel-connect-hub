@@ -27,24 +27,24 @@ export default function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Users" value={data.analytics.users} detail="Total platform accounts" />
           <MetricCard label="Jobs" value={data.analytics.jobs} detail="Jobs and internships posted" />
-          <MetricCard label="Applications" value={data.analytics.applications} detail="Student submissions" />
+          <MetricCard label="Applications" value={data.analytics.applications} detail="Youth submissions" />
           <MetricCard label="Pending" value={data.analytics.pendingApprovals} detail="Approvals awaiting review" />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard label="Opportunities" value="Live" detail="Browse internships and jobs approved by admins" />
-          <MetricCard label="Marketplace" value="Open" detail="Promote student ventures and small businesses" />
+          <MetricCard label="Marketplace" value="Open" detail="Promote youth ventures and small businesses" />
           <MetricCard label="Learning" value="Growing" detail="Enroll in practical short courses" />
         </div>
       )}
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {[
-          { href: "/opportunities", title: "Find or post opportunities", text: "Students apply while companies manage listings and applicants." },
+          { href: "/opportunities", title: "Find or post opportunities", text: "Youth apply while companies manage listings and applicants." },
           { href: "/marketplace", title: "Advertise a business", text: "Publish products, services, events, housing, and campus offers." },
-          { href: "/learning", title: "Build skills", text: "Training providers add courses and students enroll." }
+          { href: "/learning", title: "Build skills", text: "Training providers add courses and youth enroll." }
         ].map((item) => (
-          <Link key={item.href} href={item.href} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm hover:border-brand">
+          <Link key={item.href} href={item.href} className="rounded-lg border border-line bg-card p-5 shadow-sm hover:border-brand">
             <h2 className="font-bold text-ink">{item.title}</h2>
             <p className="mt-2 text-sm leading-6 text-muted">{item.text}</p>
           </Link>

@@ -35,10 +35,10 @@ export default function MarketplacePage() {
 
   return (
     <Shell>
-      <SectionHeader title="Marketplace" subtitle="Student ventures and small businesses can advertise services, products, events, and campus offers." />
+      <SectionHeader title="Marketplace" subtitle="Youth ventures and small businesses can advertise services, products, events, and campus offers." />
       <div className="mb-4 flex flex-wrap gap-2">
         {["", "technology", "food", "fashion", "events", "services", "housing", "other"].map((item) => (
-          <button key={item || "all"} onClick={() => setCategory(item)} className={`rounded-md px-3 py-2 text-sm font-semibold ${category === item ? "bg-brand text-white" : "bg-white text-slate-600"}`}>
+          <button key={item || "all"} onClick={() => setCategory(item)} className={`rounded-md px-3 py-2 text-sm font-semibold ${category === item ? "bg-brand text-night" : "bg-white text-slate-600"}`}>
             {item || "all"}
           </button>
         ))}
@@ -65,7 +65,7 @@ export default function MarketplacePage() {
           <input name="price" type="number" placeholder="Price in TZS" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
           <input name="contact" placeholder="Contact" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" required />
           <input name="location" placeholder="Location" className="focus-ring mt-3 w-full rounded-md border border-slate-300 px-3 py-2" />
-          <button className="focus-ring mt-3 w-full rounded-md bg-brand px-4 py-2 font-semibold text-white">Submit for approval</button>
+          <button className="focus-ring mt-3 w-full rounded-md bg-brand px-4 py-2 font-semibold text-night">Submit for approval</button>
         </form>
       </div>
     </Shell>

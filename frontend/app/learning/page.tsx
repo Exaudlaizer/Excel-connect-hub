@@ -40,17 +40,17 @@ export default function LearningPage() {
   return (
     <Shell>
       <SectionHeader title="Learning Hub" subtitle="Short courses for digital skills, career readiness, entrepreneurship, and workplace preparation." />
-      {message && <p className="mb-4 rounded-md bg-teal-50 px-4 py-3 text-sm text-brand">{message}</p>}
+      {message && <p className="mb-4 rounded-md bg-brand/10 px-4 py-3 text-sm text-brand">{message}</p>}
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="grid gap-4 md:grid-cols-2">
           {data?.courses?.map((course) => (
             <article key={course._id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <span className="rounded bg-teal-50 px-2 py-1 text-xs font-semibold uppercase text-brand">{course.category}</span>
+              <span className="rounded bg-brand/10 px-2 py-1 text-xs font-semibold uppercase text-brand">{course.category}</span>
               <h2 className="mt-3 text-lg font-bold text-ink">{course.title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-700">{course.description}</p>
               <p className="mt-3 text-sm text-muted">{course.duration || "Flexible"} · {course.deliveryMode} · TZS {(course.price || 0).toLocaleString()}</p>
               {user?.role === "student" && (
-                <button onClick={() => enroll.mutate(course._id)} className="focus-ring mt-4 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">Enroll</button>
+                <button onClick={() => enroll.mutate(course._id)} className="focus-ring mt-4 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-night">Enroll</button>
               )}
             </article>
           ))}
@@ -68,7 +68,7 @@ export default function LearningPage() {
               <option value="in-person">In person</option>
               <option value="hybrid">Hybrid</option>
             </select>
-            <button className="focus-ring mt-3 w-full rounded-md bg-brand px-4 py-2 font-semibold text-white">Submit for approval</button>
+            <button className="focus-ring mt-3 w-full rounded-md bg-brand px-4 py-2 font-semibold text-night">Submit for approval</button>
           </form>
         )}
       </div>

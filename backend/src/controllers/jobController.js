@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const Job = require("../models/Job");
 const User = require("../models/User");
 
@@ -5,8 +6,22 @@ async function listJobs(req, res, next) {
   try {
     const where = {};
     if (req.query.type) where.type = req.query.type;
-    if (req.query.status) where.status = req.query.status;
-    if (!req.user || req.user.role === "student") where.status = "approved";
+
+    const isAdmin = req.user?.role === "admin";
+
+    // Only admins see the moderation queue. A company sees the public listings
+    // plus its own drafts; everyone else sees approved listings only. Without
+    // this clamp any logged-in company could read every rival's pending post.
+    if (isAdmin) {
+      if (req.query.status) where.status = req.query.status;
+    } else if (req.user?.role === "company") {
+      where[Op.and] = [
+        { [Op.or]: [{ status: "approved" }, { companyId: req.user.id }] },
+        ...(req.query.status ? [{ status: req.query.status }] : [])
+      ];
+    } else {
+      where.status = "approved";
+    }
 
     const jobs = await Job.findAll({
       where,

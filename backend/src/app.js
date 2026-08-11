@@ -21,15 +21,33 @@ assertEnv();
 
 const app = express();
 
+// Behind a reverse proxy (Render, Fly, nginx, …) every request arrives from the
+// proxy's IP. Without this the rate limiters bucket the whole internet together
+// and a single noisy client locks everyone out.
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+}
+
 app.use(helmet());
+
+// Multiple origins may be listed comma-separated, e.g. a preview deploy plus
+// production. Requests without an Origin header (curl, server-to-server) pass.
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(
   rateLimit({
@@ -44,8 +62,9 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "excel-connect-hub-api" });
 });
 
-// Credential endpoints get a much tighter budget than the global limiter:
-// 250 attempts per window is a comfortable brute-force allowance.
+// Credential endpoints get a much tighter budget than the global limiter. The
+// global allowance of 250 requests per window is far too generous for a login
+// form — it is a comfortable brute-force budget.
 app.use(
   "/api/auth/login",
   rateLimit({

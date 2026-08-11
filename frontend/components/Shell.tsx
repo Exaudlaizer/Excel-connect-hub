@@ -32,7 +32,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-card p-5 lg:block">
+      <aside className="sidebar-ambient fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-card p-5 lg:block">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Logo size={42} />
           <span>
@@ -48,11 +48,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  active ? "bg-brand/10 text-brand" : "text-slate-600 hover:bg-slate-50"
+                aria-current={active ? "page" : undefined}
+                className={`nav-item group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+                  active ? "nav-item-active text-brand" : "text-slate-600 hover:text-ink"
                 }`}
               >
-                <Icon size={18} />
+                {/* Icon leads the colour shift — it reaches brand gold on hover
+                    while the label only sharpens to ink, so the row brightens
+                    without the whole thing lighting up at once. */}
+                <Icon
+                  size={18}
+                  className={`transition-colors duration-200 ${
+                    active ? "text-brand" : "text-slate-400 group-hover:text-brand"
+                  }`}
+                />
                 {item.label}
               </Link>
             );

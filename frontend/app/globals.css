@@ -40,6 +40,93 @@ textarea::placeholder {
   @apply focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2;
 }
 
+/* ---------------------------------------------------------------------------
+   Sidebar navigation — glass treatment
+   ---------------------------------------------------------------------------
+   Frosted pane on hover, same pane held open (and turned up) when active.
+
+   The tint is built from the brand gold rather than plain white: the sidebar
+   is already #ffffff, so a white-on-white pane would be invisible. What sells
+   the glass here is the layering — a translucent gradient, a hairline gold
+   edge, an inset highlight along the top, and a soft coloured glow beneath.
+
+   `backdrop-filter` is deliberate rather than decorative: the sidebar sits
+   above the page surface, so the blur has real content to work on wherever the
+   pane overlaps it, and it costs nothing where it does not.
+
+   Motion is handled by the prefers-reduced-motion block further down, which
+   flattens these transitions for anyone who has asked for that.
+   ------------------------------------------------------------------------- */
+
+.nav-item {
+  position: relative;
+  /* Reserved up front so the hover border does not shift the row by 1px. */
+  border: 1px solid transparent;
+  transition:
+    background-image 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 160ms ease;
+}
+
+.nav-item:hover {
+  /* Mostly translucent so the sidebar's ambient wash reads through the pane —
+     that show-through, not the blur alone, is what makes it look like glass. */
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 252, 244, 0.34) 46%,
+    rgba(183, 134, 43, 0.2) 100%
+  );
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(180%);
+  border-color: rgba(183, 134, 43, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(24, 33, 47, 0.05),
+    0 12px 28px -10px rgba(183, 134, 43, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Active: the same pane, held open and dialled up a step. Slightly deeper
+   tint, a more defined edge, and a touch more glow — enough to read as
+   "you are here" at a glance without competing with the page content. */
+.nav-item-active {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(183, 134, 43, 0.15) 48%,
+    rgba(183, 134, 43, 0.3) 100%
+  );
+  -webkit-backdrop-filter: blur(14px) saturate(190%);
+  backdrop-filter: blur(14px) saturate(190%);
+  border-color: rgba(183, 134, 43, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(24, 33, 47, 0.06),
+    0 14px 32px -10px rgba(183, 134, 43, 0.6);
+}
+
+.nav-item-active:hover {
+  border-color: rgba(183, 134, 43, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(24, 33, 47, 0.06),
+    0 16px 36px -10px rgba(183, 134, 43, 0.68);
+  transform: translateY(-1px);
+}
+
+/* The ambient wash the panes sit on.
+   Without something non-uniform behind them, `backdrop-filter` is a no-op and
+   the whole effect collapses into a flat tinted chip. This is a background
+   layer on the sidebar only — no geometry, spacing, or flow changes. */
+.sidebar-ambient {
+  background-image:
+    radial-gradient(120% 55% at 0% 0%, rgba(183, 134, 43, 0.13), transparent 62%),
+    radial-gradient(90% 45% at 100% 100%, rgba(217, 119, 6, 0.09), transparent 58%);
+}
+
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,

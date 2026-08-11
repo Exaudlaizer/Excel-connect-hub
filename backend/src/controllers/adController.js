@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const Ad = require("../models/Ad");
 const User = require("../models/User");
 
@@ -5,8 +6,19 @@ async function listAds(req, res, next) {
   try {
     const where = {};
     if (req.query.category) where.category = req.query.category;
-    if (req.query.status) where.status = req.query.status;
-    if (!req.user || req.user.role === "student") where.status = "approved";
+
+    // Same rule as jobs: the moderation queue is admin-only, an owner sees
+    // their own submissions, and everyone else sees approved ads.
+    if (req.user?.role === "admin") {
+      if (req.query.status) where.status = req.query.status;
+    } else if (req.user) {
+      where[Op.and] = [
+        { [Op.or]: [{ status: "approved" }, { ownerId: req.user.id }] },
+        ...(req.query.status ? [{ status: req.query.status }] : [])
+      ];
+    } else {
+      where.status = "approved";
+    }
 
     const ads = await Ad.findAll({
       where,

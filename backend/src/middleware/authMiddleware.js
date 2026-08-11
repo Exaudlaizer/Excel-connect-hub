@@ -24,14 +24,21 @@ async function protect(req, res, next) {
   }
 }
 
+// Same as `protect`, but an absent or unusable token is not an error — the
+// request simply continues as an anonymous visitor. A suspended account is
+// treated as anonymous too, so suspension immediately removes the wider
+// visibility that staff and owner roles get on listing endpoints.
 async function optionalProtect(req, _res, next) {
+  req.user = null;
+
   try {
     const header = req.headers.authorization || "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : null;
 
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findByPk(decoded.id);
+      const user = await User.findByPk(decoded.id);
+      if (user && user.status === "active") req.user = user;
     }
   } catch (error) {
     req.user = null;

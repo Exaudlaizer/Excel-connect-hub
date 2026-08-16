@@ -1,6 +1,7 @@
 const Ad = require("./Ad");
 const Application = require("./Application");
 const Course = require("./Course");
+const EmailVerificationToken = require("./EmailVerificationToken");
 const Job = require("./Job");
 const PasswordResetToken = require("./PasswordResetToken");
 const User = require("./User");
@@ -23,4 +24,7 @@ Course.belongsTo(User, { foreignKey: "providerId", as: "provider" });
 User.hasMany(PasswordResetToken, { foreignKey: "userId", as: "resetTokens", onDelete: "CASCADE" });
 PasswordResetToken.belongsTo(User, { foreignKey: "userId", as: "user" });
 
-module.exports = { Ad, Application, Course, Job, PasswordResetToken, User };
+User.hasMany(EmailVerificationToken, { foreignKey: "userId", as: "verificationTokens", onDelete: "CASCADE" });
+EmailVerificationToken.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+module.exports = { Ad, Application, Course, EmailVerificationToken, Job, PasswordResetToken, User };

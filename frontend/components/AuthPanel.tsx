@@ -1,126 +1,126 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { GraduationCap, Building2, Presentation, Loader2 } from "lucide-react";
+import { CheckCircle2, GraduationCap, Building2, Presentation, Loader2, MailCheck } from "lucide-react";
 import { SelfServiceRole, useAuth } from "@/lib/auth";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 
-// The "youth" role maps to the backend `student` value so the API/DB stay unchanged.
-// Admin is intentionally not offered: the API rejects self-service admin signup,
-// and admins are provisioned with `npm run seed:admin`.
-const roles: Array<{ value: SelfServiceRole; label: string; hint: string; icon: React.ElementType }> = [
-  { value: "student", label: "Youth", hint: "Find work and learn", icon: GraduationCap },
-  { value: "company", label: "Company", hint: "Hire and advertise", icon: Building2 },
-  { value: "mentor", label: "Mentor", hint: "Offer your courses", icon: Presentation }
+const roles: Array<{ value: SelfServiceRole; label: string; icon: React.ElementType }> = [
+  { value: "student", label: "Student", icon: GraduationCap },
+  { value: "company", label: "Employer", icon: Building2 },
+  { value: "mentor", label: "Mentor", icon: Presentation }
 ];
 
-export function AuthPanel() {
-  const router = useRouter();
+function PasswordStrength({ password }: { password: string }) {
+  const score = useMemo(() => [password.length >= 8, /[A-Z]/.test(password), /[0-9]/.test(password), /[^A-Za-z0-9]/.test(password)].filter(Boolean).length, [password]);
+  const label = ["Use 8+ characters", "Getting started", "Good password", "Strong password", "Excellent password"][score];
+  return (
+    <div className="mt-2" aria-live="polite">
+      <div className="grid grid-cols-4 gap-1" aria-hidden>
+        {[0, 1, 2, 3].map((index) => <span key={index} className={`h-1 rounded-full ${index < score ? "bg-brandLight" : "bg-white/10"}`} />)}
+      </div>
+      <p className="mt-1.5 text-xs text-slate-400">{label}</p>
+    </div>
+  );
+}
+
+export function AuthPanel({ mode }: { mode: "login" | "register" }) {
   const { login, register } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("register");
   const [role, setRole] = useState<SelfServiceRole>("student");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [complete, setComplete] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    setLoading(true);
-
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email"));
-    const password = String(form.get("password"));
-    const name = String(form.get("name") || "");
+    const email = String(form.get("email") || "");
+    const enteredPassword = String(form.get("password") || "");
 
+    if (mode === "register" && enteredPassword !== String(form.get("confirmPassword") || "")) {
+      setError("The two passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      if (mode === "login") await login(email, password);
-      else await register({ name, email, password, role });
-      router.push("/dashboard");
+      if (mode === "login") {
+        await login(email, enteredPassword, form.get("remember") === "on");
+        window.location.assign("/dashboard");
+      } else {
+        await register({ name: String(form.get("name") || ""), email, password: enteredPassword, role });
+        setComplete(true);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed");
+      setError(err instanceof Error ? err.message : "We could not complete that request. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="w-full max-w-md animate-slide-up rounded-2xl border border-line bg-card p-6 shadow-soft">
-      <div className="mb-6 grid grid-cols-2 rounded-lg bg-slate-100 p-1">
-        {(["register", "login"] as const).map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`rounded-md px-3 py-2 text-sm font-semibold capitalize transition-all duration-200 ${
-              mode === item ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
-            }`}
-            onClick={() => setMode(item)}
-          >
-            {item}
-          </button>
-        ))}
+  if (complete) {
+    return (
+      <div className="auth-card text-center" role="status">
+        <span className="auth-success-icon mx-auto"><CheckCircle2 size={27} /></span>
+        <p className="auth-kicker">Account created</p>
+        <h2 className="auth-title">Welcome to the hub.</h2>
+        <p className="auth-copy mt-3">We sent a confirmation link to your email. You can start exploring now, and verify your email when it arrives.</p>
+        <div className="auth-notice mt-6 text-left"><MailCheck size={18} /><span>Verification helps protect your account and the student community.</span></div>
+        <Link href="/dashboard" className="auth-primary-button mt-6">Continue to dashboard</Link>
       </div>
+    );
+  }
 
-      {/* key on `mode` so the fields re-animate each time you switch */}
-      <form key={mode} className="animate-fade-in space-y-4" onSubmit={submit}>
-        {mode === "register" && (
+  const isLogin = mode === "login";
+  return (
+    <div className="auth-card">
+      <p className="auth-kicker">{isLogin ? "Welcome back" : "Create your account"}</p>
+      <h2 className="auth-title">{isLogin ? "Continue your progress." : "Start building momentum."}</h2>
+      <p className="auth-copy">{isLogin ? "Sign in to access your learning and opportunities." : "Join a focused learning and opportunity network."}</p>
+
+      <form className="mt-7 space-y-4" onSubmit={submit} noValidate>
+        {!isLogin && (
           <>
-            <label className="block text-sm font-medium text-slate-700">
-              Full name
-              <input name="name" className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" required />
-            </label>
-            <div>
-              <p className="mb-2 text-sm font-medium text-slate-700">I am joining as</p>
+            <label className="auth-label" htmlFor="name"><span>Full name</span><input id="name" name="name" autoComplete="name" className="auth-input" required minLength={2} /></label>
+            <fieldset>
+              <legend className="auth-label mb-2">I&apos;m joining as</legend>
               <div className="grid grid-cols-3 gap-2">
-                {roles.map((item) => {
-                  const Icon = item.icon;
-                  const active = role === item.value;
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      aria-pressed={active}
-                      title={item.hint}
-                      className={`focus-ring rounded-lg border px-2 py-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 ${
-                        active ? "border-brand bg-brand/10 text-brand shadow-gold" : "border-line text-slate-600 hover:border-brand/50"
-                      }`}
-                      onClick={() => setRole(item.value)}
-                    >
-                      <Icon className={`mx-auto mb-1 transition-transform ${active ? "scale-110" : ""}`} size={18} />
-                      {item.label}
-                    </button>
-                  );
-                })}
+                {roles.map(({ value, label, icon: Icon }) => (
+                  <button key={value} type="button" onClick={() => setRole(value)} aria-pressed={role === value} className={`auth-role focus-ring-dark ${role === value ? "auth-role-active" : ""}`}>
+                    <Icon size={18} /><span>{label}</span>
+                  </button>
+                ))}
               </div>
-              <p className="mt-2 text-xs text-muted">{roles.find((item) => item.value === role)?.hint}</p>
-            </div>
+            </fieldset>
           </>
         )}
+        <label className="auth-label" htmlFor="email"><span>Email address</span><input id="email" name="email" type="email" autoComplete="email" className="auth-input" required /></label>
+        <div>
+          <PasswordInput label="Password" name="password" autoComplete={isLogin ? "current-password" : "new-password"} minLength={8} required onChange={(event) => !isLogin && setPassword(event.target.value)} />
+          {!isLogin && <PasswordStrength password={password} />}
+        </div>
+        {!isLogin && <PasswordInput label="Confirm password" name="confirmPassword" autoComplete="new-password" minLength={8} required />}
 
-        <label className="block text-sm font-medium text-slate-700">
-          Email
-          <input name="email" type="email" className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" required />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          Password
-          <input name="password" type="password" minLength={8} className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" required />
-        </label>
-        {mode === "login" && (
-          <div className="text-right">
-            <Link href="/forgot-password" className="focus-ring rounded text-sm font-medium text-brand hover:underline">
-              Forgot password?
-            </Link>
+        {isLogin && (
+          <div className="flex items-center justify-between gap-3 pt-0.5">
+            <label className="auth-check"><input name="remember" type="checkbox" defaultChecked /><span>Keep me signed in</span></label>
+            <Link href="/forgot-password" className="auth-text-link focus-ring-dark">Forgot password?</Link>
           </div>
         )}
-        {error && <p className="animate-fade-in rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        <button
-          disabled={loading}
-          className="focus-ring flex w-full items-center justify-center gap-2 rounded-md bg-brand px-4 py-3 font-semibold text-night shadow-gold transition-all duration-200 hover:bg-brandDark hover:shadow-lg active:scale-[0.98] disabled:opacity-60"
-        >
+
+        {error && <p className="auth-error" role="alert">{error}</p>}
+        <button disabled={loading} className="auth-primary-button" type="submit">
           {loading && <Loader2 className="animate-spin" size={18} />}
-          {loading ? "Please wait..." : mode === "login" ? "Login" : "Create account"}
+          {loading ? (isLogin ? "Signing in..." : "Creating account...") : (isLogin ? "Sign in securely" : "Create account")}
         </button>
       </form>
+      <p className="mt-6 text-center text-sm text-slate-400">
+        {isLogin ? "New to Excel Connect Hub?" : "Already have an account?"} {" "}
+        <Link href={isLogin ? "/signup" : "/login"} className="auth-text-link focus-ring-dark">{isLogin ? "Create an account" : "Sign in"}</Link>
+      </p>
     </div>
   );
 }

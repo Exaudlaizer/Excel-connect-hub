@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { signToken } = require("../utils/tokens");
+const { issueVerification } = require("./emailVerificationController");
 
 function publicUser(user) {
   return {
@@ -9,6 +10,7 @@ function publicUser(user) {
     email: user.email,
     role: user.role,
     status: user.status,
+    emailVerified: user.emailVerified,
     studentProfile: user.studentProfile,
     companyProfile: user.companyProfile,
     mentorProfile: user.mentorProfile
@@ -31,6 +33,7 @@ async function register(req, res, next) {
 
     const safeRole = SELF_SERVICE_ROLES.includes(role) ? role : "student";
     const user = await User.create({ name, email, password, role: safeRole });
+    await issueVerification(user);
     res.status(201).json({
       token: signToken(user),
       user: publicUser(user)

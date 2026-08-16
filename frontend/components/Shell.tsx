@@ -85,13 +85,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   className="focus-ring rounded-md border border-line px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-slate-50"
                   onClick={() => {
                     logout();
-                    router.push("/");
+                    router.push("/login");
                   }}
                 >
                   Logout
                 </button>
               ) : (
-                <Link className="focus-ring rounded-md bg-brand px-3 py-2 text-sm font-semibold text-night" href="/">
+                <Link className="focus-ring rounded-md bg-brand px-3 py-2 text-sm font-semibold text-night" href="/login">
                   Login
                 </Link>
               )}

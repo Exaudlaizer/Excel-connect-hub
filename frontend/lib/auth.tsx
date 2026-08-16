@@ -14,12 +14,13 @@ export type AuthUser = {
   name: string;
   email: string;
   role: Role;
+  emailVerified?: boolean;
 };
 
 type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   register: (payload: { name: string; email: string; password: string; role: SelfServiceRole }) => Promise<void>;
   logout: () => void;
 };
@@ -31,25 +32,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("excel_connect_token");
-    const savedUser = localStorage.getItem("excel_connect_user");
+    const savedToken = localStorage.getItem("excel_connect_token") || sessionStorage.getItem("excel_connect_token");
+    const savedUser = localStorage.getItem("excel_connect_user") || sessionStorage.getItem("excel_connect_user");
     if (savedToken) setToken(savedToken);
     if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  function persist(nextToken: string, nextUser: AuthUser) {
-    localStorage.setItem("excel_connect_token", nextToken);
-    localStorage.setItem("excel_connect_user", JSON.stringify(nextUser));
+  function persist(nextToken: string, nextUser: AuthUser, remember = true) {
+    const storage = remember ? localStorage : sessionStorage;
+    const otherStorage = remember ? sessionStorage : localStorage;
+    otherStorage.removeItem("excel_connect_token");
+    otherStorage.removeItem("excel_connect_user");
+    storage.setItem("excel_connect_token", nextToken);
+    storage.setItem("excel_connect_user", JSON.stringify(nextUser));
     setToken(nextToken);
     setUser(nextUser);
   }
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, remember = true) {
     const data = await api<{ token: string; user: AuthUser }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password })
     });
-    persist(data.token, data.user);
+    persist(data.token, data.user, remember);
   }
 
   async function register(payload: { name: string; email: string; password: string; role: SelfServiceRole }) {
@@ -63,6 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function logout() {
     localStorage.removeItem("excel_connect_token");
     localStorage.removeItem("excel_connect_user");
+    sessionStorage.removeItem("excel_connect_token");
+    sessionStorage.removeItem("excel_connect_user");
     setToken(null);
     setUser(null);
   }

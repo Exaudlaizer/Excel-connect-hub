@@ -9,6 +9,7 @@ const config: Config = {
         ink: "#1b2130", // primary text / headings
         muted: "#64748b", // secondary text
         brand: "#b7862b", // gold (primary accent)
+        brandLight: "#e2bd68", // readable gold on dark surfaces
         brandDark: "#8a6412", // deep gold for hovers
         accent: "#d97706", // amber highlight
         surface: "#f7f8fb", // app background

@@ -9,7 +9,11 @@ const sequelize = new Sequelize(databaseUrl, {
 
 async function connectDB() {
   await sequelize.authenticate();
-  await sequelize.sync({ alter: process.env.NODE_ENV !== "production" });
+  // Schema alteration is intentionally opt-in. Running `alter` on every dev
+  // boot can take minutes against an existing database, leaving the API port
+  // closed and making the frontend report a network/auth failure. Use
+  // DB_SYNC_ALTER=true only when changing model schema locally.
+  if (process.env.DB_SYNC_ALTER === "true") await sequelize.sync({ alter: true });
   console.log("PostgreSQL connected");
 }
 

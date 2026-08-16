@@ -32,6 +32,10 @@ const User = sequelize.define(
       type: DataTypes.ENUM("active", "suspended"),
       defaultValue: "active"
     },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
     studentProfile: {
       type: DataTypes.JSONB,
       defaultValue: {}

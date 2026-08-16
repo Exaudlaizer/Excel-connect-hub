@@ -2,6 +2,7 @@ const express = require("express");
 const { body } = require("express-validator");
 const { login, me, register, SELF_SERVICE_ROLES } = require("../controllers/authController");
 const { forgotPassword, resetPassword } = require("../controllers/passwordResetController");
+const { resendVerification, verifyEmail } = require("../controllers/emailVerificationController");
 const { protect } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
@@ -45,6 +46,9 @@ router.post(
   validate,
   resetPassword
 );
+
+router.post("/verify-email", [body("token").trim().notEmpty().withMessage("Verification token is required")], validate, verifyEmail);
+router.post("/resend-verification", [body("email").isEmail().normalizeEmail().withMessage("Valid email is required")], validate, resendVerification);
 
 router.get("/me", protect, me);
 

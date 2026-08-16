@@ -109,6 +109,16 @@ app.use(
     message: { message: "Too many reset attempts. Try again later." }
   })
 );
+app.use(
+  "/api/auth/resend-verification",
+  rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many verification requests. Try again later." }
+  })
+);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

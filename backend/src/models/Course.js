@@ -44,7 +44,13 @@ const Course = sequelize.define(
       defaultValue: []
     }
   },
-  { tableName: "courses" }
+  {
+    tableName: "courses",
+    indexes: [
+      { name: "courses_provider_id_idx", fields: ["providerId"] },
+      { name: "courses_status_created_at_idx", fields: ["status", "createdAt"] }
+    ]
+  }
 );
 
 Course.prototype.toJSON = function toJSON() {

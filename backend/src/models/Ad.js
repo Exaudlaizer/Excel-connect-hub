@@ -17,6 +17,11 @@ const Ad = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false
     },
+    // Who is advertising. Without this the catalogue can only show the account
+    // holder's personal name, which is not what a business listing should say.
+    businessName: DataTypes.STRING,
+    logoUrl: DataTypes.STRING(500),
+    linkUrl: DataTypes.STRING(500),
     category: {
       type: DataTypes.ENUM("technology", "food", "fashion", "events", "services", "housing", "other"),
       allowNull: false
@@ -30,14 +35,21 @@ const Ad = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false
     },
-    imageUrl: DataTypes.STRING,
+    imageUrl: DataTypes.STRING(500),
     location: DataTypes.STRING,
     status: {
       type: DataTypes.ENUM("pending", "approved", "rejected", "expired"),
       defaultValue: "pending"
     }
   },
-  { tableName: "ads" }
+  {
+    tableName: "ads",
+    indexes: [
+      { name: "ads_owner_id_idx", fields: ["ownerId"] },
+      { name: "ads_status_created_at_idx", fields: ["status", "createdAt"] },
+      { name: "ads_category_idx", fields: ["category"] }
+    ]
+  }
 );
 
 Ad.prototype.toJSON = function toJSON() {

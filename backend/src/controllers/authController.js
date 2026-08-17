@@ -11,6 +11,8 @@ function publicUser(user) {
     role: user.role,
     status: user.status,
     emailVerified: user.emailVerified,
+    phone: user.phone,
+    preferences: user.preferences || {},
     studentProfile: user.studentProfile,
     companyProfile: user.companyProfile,
     mentorProfile: user.mentorProfile
@@ -24,7 +26,7 @@ const SELF_SERVICE_ROLES = ["student", "company", "mentor"];
 
 async function register(req, res, next) {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, phone, role } = req.body;
     const existing = await User.findOne({ where: { email: email.toLowerCase() } });
 
     if (existing) {
@@ -32,7 +34,13 @@ async function register(req, res, next) {
     }
 
     const safeRole = SELF_SERVICE_ROLES.includes(role) ? role : "student";
-    const user = await User.create({ name, email, password, role: safeRole });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: safeRole,
+      phone: phone ? String(phone).trim() : null
+    });
     await issueVerification(user);
     res.status(201).json({
       token: signToken(user),

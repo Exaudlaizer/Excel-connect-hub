@@ -33,10 +33,20 @@ async function listCourses(req, res, next) {
   }
 }
 
+// `enrolledStudents` is deliberately absent: it is the roster, and spreading
+// req.body into create() would let a mentor publish a course that already claims
+// enrolments it never had.
+const EDITABLE_COURSE_FIELDS = ["title", "category", "description", "duration", "price", "deliveryMode", "startDate"];
+
 async function createCourse(req, res, next) {
   try {
+    const payload = {};
+    EDITABLE_COURSE_FIELDS.forEach((field) => {
+      if (req.body[field] !== undefined) payload[field] = req.body[field];
+    });
+
     const course = await Course.create({
-      ...req.body,
+      ...payload,
       providerId: req.user.id,
       status: req.user.role === "admin" ? "approved" : "pending"
     });

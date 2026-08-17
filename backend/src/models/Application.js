@@ -29,7 +29,10 @@ const Application = sequelize.define(
   },
   {
     tableName: "applications",
-    indexes: [{ unique: true, fields: ["jobId", "studentId"] }]
+    indexes: [
+      { unique: true, fields: ["jobId", "studentId"] },
+      { name: "applications_student_id_idx", fields: ["studentId"] }
+    ]
   }
 );
 

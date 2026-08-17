@@ -2,6 +2,28 @@ const { Op } = require("sequelize");
 const Job = require("../models/Job");
 const User = require("../models/User");
 
+// Content fields a company may set on its own listing. `status` and `companyId`
+// are excluded on purpose: spreading req.body into create()/update() would let a
+// company approve its own job and skip the admin queue.
+const EDITABLE_JOB_FIELDS = [
+  "title",
+  "type",
+  "location",
+  "workMode",
+  "description",
+  "requirements",
+  "salaryRange",
+  "deadline"
+];
+
+function pickJobFields(body) {
+  const payload = {};
+  EDITABLE_JOB_FIELDS.forEach((field) => {
+    if (body[field] !== undefined) payload[field] = body[field];
+  });
+  return payload;
+}
+
 async function listJobs(req, res, next) {
   try {
     const where = {};
@@ -37,7 +59,7 @@ async function listJobs(req, res, next) {
 async function createJob(req, res, next) {
   try {
     const job = await Job.create({
-      ...req.body,
+      ...pickJobFields(req.body),
       companyId: req.user.id,
       status: req.user.role === "admin" ? "approved" : "pending"
     });
@@ -56,20 +78,6 @@ async function myJobs(req, res, next) {
   }
 }
 
-// Content fields an owning company may edit on its own listing. `status` and
-// `companyId` are excluded on purpose: passing req.body straight to update()
-// would let a company approve its own job and skip the admin queue.
-const EDITABLE_JOB_FIELDS = [
-  "title",
-  "type",
-  "location",
-  "workMode",
-  "description",
-  "requirements",
-  "salaryRange",
-  "deadline"
-];
-
 // A company may retire its own listing, but only an admin may approve or reject.
 const OWNER_STATUS_TRANSITIONS = ["closed"];
 
@@ -84,10 +92,7 @@ async function updateJob(req, res, next) {
       return res.status(403).json({ message: "Cannot update this listing" });
     }
 
-    const updates = {};
-    EDITABLE_JOB_FIELDS.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
+    const updates = pickJobFields(req.body);
 
     if (req.body.status !== undefined) {
       if (!isAdmin && !OWNER_STATUS_TRANSITIONS.includes(req.body.status)) {

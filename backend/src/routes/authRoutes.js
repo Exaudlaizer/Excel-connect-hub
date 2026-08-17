@@ -14,6 +14,11 @@ router.post(
     body("name").trim().isLength({ min: 2 }).withMessage("Name is required"),
     body("email").isEmail().normalizeEmail().withMessage("Valid email is required"),
     body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters"),
+    body("phone")
+      .optional({ values: "falsy" })
+      .trim()
+      .matches(/^\+?[0-9\s-]{7,20}$/)
+      .withMessage("Enter a valid phone number"),
     body("role").optional().isIn(SELF_SERVICE_ROLES).withMessage("Invalid role")
   ],
   validate,

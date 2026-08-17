@@ -1,25 +1,42 @@
 const Ad = require("../models/Ad");
 const Application = require("../models/Application");
+const CommunityPost = require("../models/CommunityPost");
 const Course = require("../models/Course");
 const Job = require("../models/Job");
+const Service = require("../models/Service");
 const User = require("../models/User");
 
 async function analytics(_req, res, next) {
   try {
-    const [users, students, companies, mentors, jobs, applications, ads, courses, pendingJobs, pendingAds, pendingCourses] =
-      await Promise.all([
-        User.count(),
-        User.count({ where: { role: "student" } }),
-        User.count({ where: { role: "company" } }),
-        User.count({ where: { role: "mentor" } }),
-        Job.count(),
-        Application.count(),
-        Ad.count(),
-        Course.count(),
-        Job.count({ where: { status: "pending" } }),
-        Ad.count({ where: { status: "pending" } }),
-        Course.count({ where: { status: "pending" } })
-      ]);
+    const [
+      users,
+      students,
+      companies,
+      mentors,
+      jobs,
+      applications,
+      ads,
+      courses,
+      posts,
+      services,
+      pendingJobs,
+      pendingAds,
+      pendingCourses
+    ] = await Promise.all([
+      User.count(),
+      User.count({ where: { role: "student" } }),
+      User.count({ where: { role: "company" } }),
+      User.count({ where: { role: "mentor" } }),
+      Job.count(),
+      Application.count(),
+      Ad.count(),
+      Course.count(),
+      CommunityPost.count(),
+      Service.count({ where: { status: "active" } }),
+      Job.count({ where: { status: "pending" } }),
+      Ad.count({ where: { status: "pending" } }),
+      Course.count({ where: { status: "pending" } })
+    ]);
 
     res.json({
       analytics: {
@@ -31,6 +48,11 @@ async function analytics(_req, res, next) {
         applications,
         ads,
         courses,
+        posts,
+        services,
+        pendingJobs,
+        pendingAds,
+        pendingCourses,
         pendingApprovals: pendingJobs + pendingAds + pendingCourses
       }
     });

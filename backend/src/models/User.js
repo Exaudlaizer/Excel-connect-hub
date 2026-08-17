@@ -36,6 +36,18 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
+    phone: {
+      type: DataTypes.STRING(40),
+      allowNull: true
+    },
+    // UI preferences that should follow the account across devices — currently
+    // the chosen theme. Kept as JSONB so adding another preference later is not
+    // another migration.
+    preferences: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: {}
+    },
     studentProfile: {
       type: DataTypes.JSONB,
       defaultValue: {}
@@ -51,6 +63,7 @@ const User = sequelize.define(
   },
   {
     tableName: "users",
+    indexes: [{ name: "users_role_idx", fields: ["role"] }, { name: "users_status_idx", fields: ["status"] }],
     hooks: {
       beforeCreate: async (user) => {
         user.email = user.email.toLowerCase();

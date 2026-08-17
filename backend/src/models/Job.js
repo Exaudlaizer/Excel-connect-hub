@@ -44,7 +44,13 @@ const Job = sequelize.define(
       defaultValue: "pending"
     }
   },
-  { tableName: "jobs" }
+  {
+    tableName: "jobs",
+    indexes: [
+      { name: "jobs_company_id_idx", fields: ["companyId"] },
+      { name: "jobs_status_created_at_idx", fields: ["status", "createdAt"] }
+    ]
+  }
 );
 
 Job.prototype.toJSON = function toJSON() {

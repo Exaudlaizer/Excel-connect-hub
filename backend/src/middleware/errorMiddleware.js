@@ -32,14 +32,23 @@ function errorHandler(error, _req, res, _next) {
   const translated = translate(error);
   const fallback = res.statusCode === 200 ? 500 : res.statusCode;
   const status = translated?.status || error.status || fallback;
+  const isServerFault = status >= 500;
 
   // Genuine server faults are worth a log line; client mistakes are not.
-  if (status >= 500) console.error(error);
+  if (isServerFault) console.error(error);
+
+  // A 500 means something inside the server broke. Its message names internal
+  // modules, columns, and connection strings, so the client gets a fixed
+  // sentence and the detail stays in the server log where it belongs.
+  const message = isServerFault
+    ? "Something went wrong on our side. Please try again."
+    : translated?.message || error.message || "Request failed";
 
   res.status(status).json({
-    message: translated?.message || error.message || "Server error",
+    message,
     ...(translated?.errors ? { errors: translated.errors } : {}),
-    stack: process.env.NODE_ENV === "production" ? undefined : error.stack
+    // Never in production, and never for a client error where it adds nothing.
+    ...(process.env.NODE_ENV !== "production" && isServerFault ? { stack: error.stack } : {})
   });
 }
 

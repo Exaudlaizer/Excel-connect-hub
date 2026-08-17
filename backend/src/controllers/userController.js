@@ -21,14 +21,36 @@ async function listUsers(req, res, next) {
   }
 }
 
+// Fields a user may change about themselves. `role`, `status`, `email`, and
+// `password` are absent by design — none of them may be changed by writing to
+// this endpoint.
+const SELF_EDITABLE_FIELDS = ["name", "phone", "studentProfile", "companyProfile", "mentorProfile"];
+
+// Preference keys the server recognises. Anything else in the object is dropped,
+// so this endpoint cannot be used as free-form per-user storage.
+const ALLOWED_PREFERENCES = { theme: ["midnight", "light", "ocean", "forest"] };
+
+function mergePreferences(current, incoming) {
+  if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return current;
+
+  const next = { ...(current || {}) };
+  Object.entries(ALLOWED_PREFERENCES).forEach(([key, values]) => {
+    if (incoming[key] !== undefined && values.includes(incoming[key])) next[key] = incoming[key];
+  });
+  return next;
+}
+
 async function updateMe(req, res, next) {
   try {
-    const allowed = ["name", "studentProfile", "companyProfile", "mentorProfile"];
     const updates = {};
 
-    allowed.forEach((field) => {
+    SELF_EDITABLE_FIELDS.forEach((field) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
+
+    if (req.body.preferences !== undefined) {
+      updates.preferences = mergePreferences(req.user.preferences, req.body.preferences);
+    }
 
     const user = await req.user.update(updates);
 

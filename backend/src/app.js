@@ -12,6 +12,8 @@ const jobRoutes = require("./routes/jobRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const adRoutes = require("./routes/adRoutes");
 const courseRoutes = require("./routes/courseRoutes");
+const communityRoutes = require("./routes/communityRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { assertEnv } = require("./config/env");
@@ -126,6 +128,8 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/ads", adRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/community", communityRoutes);
+app.use("/api/services", serviceRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFound);

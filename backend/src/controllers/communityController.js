@@ -2,6 +2,7 @@ const { literal } = require("sequelize");
 const CommunityPost = require("../models/CommunityPost");
 const CommunityReply = require("../models/CommunityReply");
 const User = require("../models/User");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 const AUTHOR_ATTRIBUTES = ["id", "name", "role"];
 
@@ -18,7 +19,8 @@ async function listPosts(req, res, next) {
     const where = {};
     if (req.query.category) where.category = req.query.category;
 
-    const posts = await CommunityPost.findAll({
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await CommunityPost.findAndCountAll({
       where,
       include: [{ model: User, as: "author", attributes: AUTHOR_ATTRIBUTES }],
       attributes: {
@@ -37,10 +39,12 @@ async function listPosts(req, res, next) {
         ["pinned", "DESC"],
         ["createdAt", "DESC"]
       ],
-      limit: Math.min(Number(req.query.limit) || 50, 100)
+      limit,
+      offset,
+      distinct: true
     });
 
-    res.json({ posts });
+    res.json({ posts: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }

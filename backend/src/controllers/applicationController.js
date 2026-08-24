@@ -1,6 +1,7 @@
 const Application = require("../models/Application");
 const Job = require("../models/Job");
 const User = require("../models/User");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function createApplication(req, res, next) {
   try {
@@ -25,7 +26,8 @@ async function createApplication(req, res, next) {
 
 async function myApplications(req, res, next) {
   try {
-    const applications = await Application.findAll({
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await Application.findAndCountAll({
       where: { studentId: req.user.id },
       include: [
         {
@@ -34,9 +36,12 @@ async function myApplications(req, res, next) {
           include: [{ model: User, as: "company", attributes: ["id", "name", "companyProfile"] }]
         }
       ],
-      order: [["createdAt", "DESC"]]
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json({ applications });
+    res.json({ applications: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }

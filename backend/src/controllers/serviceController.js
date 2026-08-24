@@ -1,4 +1,5 @@
 const Service = require("../models/Service");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 const EDITABLE_FIELDS = [
   "name",
@@ -25,8 +26,14 @@ async function listServices(req, res, next) {
       where.status = "active";
     }
 
-    const services = await Service.findAll({ where, order: [["name", "ASC"]] });
-    res.json({ services });
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await Service.findAndCountAll({
+      where,
+      order: [["name", "ASC"]],
+      limit,
+      offset
+    });
+    res.json({ services: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }

@@ -40,6 +40,11 @@ const User = sequelize.define(
       type: DataTypes.STRING(40),
       allowNull: true
     },
+    phoneVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
     // UI preferences that should follow the account across devices — currently
     // the chosen theme. Kept as JSONB so adding another preference later is not
     // another migration.

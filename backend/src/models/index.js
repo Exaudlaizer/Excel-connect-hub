@@ -3,8 +3,8 @@ const Application = require("./Application");
 const CommunityPost = require("./CommunityPost");
 const CommunityReply = require("./CommunityReply");
 const Course = require("./Course");
-const EmailVerificationToken = require("./EmailVerificationToken");
 const Job = require("./Job");
+const OtpCode = require("./OtpCode");
 const PasswordResetToken = require("./PasswordResetToken");
 const Service = require("./Service");
 const User = require("./User");
@@ -41,8 +41,8 @@ Service.belongsTo(User, { foreignKey: "createdById", as: "createdBy" });
 User.hasMany(PasswordResetToken, { foreignKey: "userId", as: "resetTokens", onDelete: "CASCADE" });
 PasswordResetToken.belongsTo(User, { foreignKey: "userId", as: "user" });
 
-User.hasMany(EmailVerificationToken, { foreignKey: "userId", as: "verificationTokens", onDelete: "CASCADE" });
-EmailVerificationToken.belongsTo(User, { foreignKey: "userId", as: "user" });
+User.hasMany(OtpCode, { foreignKey: "userId", as: "otpCodes", onDelete: "CASCADE" });
+OtpCode.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 module.exports = {
   Ad,
@@ -50,8 +50,8 @@ module.exports = {
   CommunityPost,
   CommunityReply,
   Course,
-  EmailVerificationToken,
   Job,
+  OtpCode,
   PasswordResetToken,
   Service,
   User

@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const User = require("../models/User");
 const { publicUser } = require("./authController");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function listUsers(req, res, next) {
   try {
@@ -14,8 +15,14 @@ async function listUsers(req, res, next) {
       where[Op.or] = [{ name: { [Op.iLike]: `%${search}%` } }, { email: { [Op.iLike]: `%${search}%` } }];
     }
 
-    const users = await User.findAll({ where, order: [["createdAt", "DESC"]] });
-    res.json({ users });
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await User.findAndCountAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset
+    });
+    res.json({ users: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -79,4 +86,23 @@ async function updateUserStatus(req, res, next) {
   }
 }
 
-module.exports = { listUsers, updateMe, updateUserStatus };
+// Promoting and demoting accounts is an admin action. Changing your own role is
+// blocked for the same reason as suspending yourself: an admin who demotes
+// themselves loses the only way back in.
+async function updateUserRole(req, res, next) {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.id === req.user.id) {
+      return res.status(400).json({ message: "You cannot change your own role" });
+    }
+
+    await user.update({ role: req.body.role });
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { listUsers, updateMe, updateUserStatus, updateUserRole };

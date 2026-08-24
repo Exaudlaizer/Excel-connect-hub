@@ -4,7 +4,7 @@ const cors = require("cors");
 const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
+const { makeLimiter } = require("./config/rateLimit");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -14,9 +14,11 @@ const adRoutes = require("./routes/adRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const communityRoutes = require("./routes/communityRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { assertEnv } = require("./config/env");
+const { UPLOAD_DIR } = require("./controllers/uploadController");
 require("./models");
 
 assertEnv();
@@ -30,7 +32,13 @@ if (process.env.TRUST_PROXY) {
   app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
 }
 
-app.use(helmet());
+app.use(
+  helmet({
+    // Uploaded images are served from this origin and rendered by the Next.js
+    // app on another one. The default same-origin policy would block them.
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
 
 // Multiple origins may be listed comma-separated, e.g. a preview deploy plus
 // production. Requests without an Origin header (curl, server-to-server) pass.
@@ -51,12 +59,16 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(makeLimiter({ name: "global", windowMs: 15 * 60 * 1000, limit: 250 }));
+
+// Uploaded images. Served read-only, with a long cache and no directory
+// listing. `express.static` will not execute anything it serves.
 app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 250,
-    standardHeaders: true,
-    legacyHeaders: false
+  "/uploads",
+  express.static(UPLOAD_DIR, {
+    index: false,
+    maxAge: "7d",
+    setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff")
   })
 );
 
@@ -69,23 +81,21 @@ app.get("/health", (_req, res) => {
 // form — it is a comfortable brute-force budget.
 app.use(
   "/api/auth/login",
-  rateLimit({
+  makeLimiter({
+    name: "login",
     windowMs: 15 * 60 * 1000,
     limit: 10,
     skipSuccessfulRequests: true,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many login attempts. Try again later." }
+    message: "Too many login attempts. Try again later."
   })
 );
 app.use(
   "/api/auth/register",
-  rateLimit({
+  makeLimiter({
+    name: "register",
     windowMs: 60 * 60 * 1000,
     limit: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many accounts created from this address. Try again later." }
+    message: "Too many accounts created from this address. Try again later."
   })
 );
 
@@ -93,32 +103,52 @@ app.use(
 // their own tight budget on top of the global limiter.
 app.use(
   "/api/auth/forgot-password",
-  rateLimit({
+  makeLimiter({
+    name: "forgot",
     windowMs: 60 * 60 * 1000,
     limit: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many reset requests. Try again later." }
+    message: "Too many reset requests. Try again later."
   })
 );
 app.use(
   "/api/auth/reset-password",
-  rateLimit({
+  makeLimiter({
+    name: "reset",
     windowMs: 60 * 60 * 1000,
     limit: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many reset attempts. Try again later." }
+    message: "Too many reset attempts. Try again later."
+  })
+);
+// Sending a code costs an email, so requests are budgeted tightly. Confirming
+// one is cheap but is a guessing surface, so it gets a separate, looser budget
+// on top of the five-attempt limit carried by the code itself.
+app.use(
+  ["/api/auth/verification/request", "/api/auth/verification/request-public"],
+  makeLimiter({
+    name: "otp-request",
+    windowMs: 60 * 60 * 1000,
+    limit: 8,
+    message: "Too many verification codes requested. Try again later."
   })
 );
 app.use(
-  "/api/auth/resend-verification",
-  rateLimit({
-    windowMs: 60 * 60 * 1000,
-    limit: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many verification requests. Try again later." }
+  ["/api/auth/verification/confirm", "/api/auth/verification/confirm-public"],
+  makeLimiter({
+    name: "otp-confirm",
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    message: "Too many verification attempts. Try again later."
+  })
+);
+
+// Uploads are the most expensive thing an authenticated user can do.
+app.use(
+  "/api/uploads",
+  makeLimiter({
+    name: "uploads",
+    windowMs: 15 * 60 * 1000,
+    limit: 40,
+    message: "Too many uploads. Please wait a moment and try again."
   })
 );
 
@@ -130,6 +160,7 @@ app.use("/api/ads", adRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/uploads", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFound);

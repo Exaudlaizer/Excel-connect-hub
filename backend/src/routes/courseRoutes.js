@@ -1,6 +1,13 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { createCourse, enrollCourse, listCourses, updateCourseStatus } = require("../controllers/courseController");
+const {
+  createCourse,
+  deleteCourse,
+  enrollCourse,
+  listCourses,
+  updateCourse,
+  updateCourseStatus
+} = require("../controllers/courseController");
 const { authorize, optionalProtect, protect } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
@@ -21,6 +28,8 @@ router.post(
   createCourse
 );
 router.post("/:id/enroll", protect, authorize("student"), enrollCourse);
+router.patch("/:id", protect, authorize("mentor", "admin"), updateCourse);
+router.delete("/:id", protect, authorize("mentor", "admin"), deleteCourse);
 router.patch(
   "/:id/approval",
   protect,

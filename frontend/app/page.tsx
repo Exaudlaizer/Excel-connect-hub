@@ -1,33 +1,307 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Building2, ChartNoAxesCombined, CheckCircle2, GraduationCap, Layers3, Network, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  BriefcaseBusiness,
+  LifeBuoy,
+  Megaphone,
+  MessagesSquare,
+  UserRound
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
-const features = [
-  { icon: BookOpenCheck, title: "Learning that leads somewhere", text: "Discover practical courses, mentors, and resources built around your next move." },
-  { icon: Network, title: "A connected student network", text: "Bring opportunities, university support, and a growing community into one place." },
-  { icon: Building2, title: "A clearer path to opportunity", text: "Meet employers, showcase your strengths, and take action with confidence." }
+/**
+ * Landing page.
+ *
+ * Everything shown here is a section that actually exists in the product. There
+ * are no counters, progress bars, match percentages, or activity feeds: those
+ * would be numbers with nothing behind them. What the page promises is what a
+ * new account can open on its first day.
+ */
+
+const SECTIONS = [
+  {
+    icon: BookOpen,
+    title: "Learning",
+    text: "Courses published by independent mentors, with the delivery mode, duration and price stated up front."
+  },
+  {
+    icon: BriefcaseBusiness,
+    title: "Opportunities",
+    text: "Jobs and internships from registered employers. Apply from your account and follow each application's status."
+  },
+  {
+    icon: MessagesSquare,
+    title: "Community",
+    text: "Discussions, questions, study groups and events, posted and answered by students on the platform."
+  },
+  {
+    icon: LifeBuoy,
+    title: "University services",
+    text: "A directory of academic, career, wellbeing and financial support, curated by the platform administrators."
+  },
+  {
+    icon: Megaphone,
+    title: "Business ads",
+    text: "Offers from local businesses aimed at students, reviewed before they appear in the catalogue."
+  },
+  {
+    icon: UserRound,
+    title: "Your profile",
+    text: "University, programme, skills and CV in one place, ready to attach to every application you send."
+  }
+];
+
+const STEPS = [
+  { number: "01", title: "Create your account", text: "Choose whether you are joining as a student, a business, or a mentor." },
+  { number: "02", title: "Complete your profile", text: "Add your university, programme and skills so employers can read them." },
+  { number: "03", title: "Apply and take part", text: "Send applications, enrol in courses, and join the conversation." }
 ];
 
 export default function HomePage() {
-  return <main className="landing-stage min-h-screen text-white">
-    <nav className="landing-nav mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
-      <Link href="/" className="flex items-center gap-3 focus-ring-dark rounded-xl"><Logo size={43} /><span><strong className="block font-display text-xl leading-none">Excel Smartic</strong><small className="mt-1 block text-[9px] font-bold tracking-[.18em] text-white/45">CONNECT · LEARN · ADVANCE</small></span></Link>
-      <div className="hidden items-center gap-7 text-sm font-semibold text-slate-300 md:flex"><a href="#platform" className="hover:text-white">Platform</a><a href="#how-it-works" className="hover:text-white">How it works</a><a href="#impact" className="hover:text-white">Impact</a></div>
-      <div className="flex items-center gap-2"><ThemeSwitcher /><Link href="/login" className="landing-signin hidden sm:inline-flex">Sign in</Link><Link href="/signup" className="landing-nav-cta">Get started <ArrowRight size={15} /></Link></div>
-    </nav>
+  return (
+    <div className="min-h-screen bg-surface">
+      <header className="glass-bar sticky top-0 z-20">
+        <nav className="container-page flex items-center justify-between gap-4 py-4">
+          <Link href="/" className="focus-ring flex items-center gap-3 rounded-xl">
+            <Logo size={38} />
+            <span className="min-w-0">
+              <span className="block font-display text-base font-bold leading-tight text-ink">Excel Connect Hub</span>
+              <span className="block text-[10px] font-semibold tracking-[0.16em] text-muted">
+                LEARN · CONNECT · GROW
+              </span>
+            </span>
+          </Link>
 
-    <section className="landing-hero mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1fr_.92fr] lg:px-8 lg:pb-28 lg:pt-24">
-      <div className="relative z-10 max-w-3xl"><p className="landing-eyebrow"><Sparkles size={15} /> THE STUDENT OPPORTUNITY NETWORK</p><h1 className="landing-title mt-6">One connected hub for the work that moves you forward.</h1><p className="landing-subtitle mt-7">Excel Connect Hub brings learning resources, university services, student community, and real academic opportunities together—so progress feels possible every day.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/signup" className="landing-primary">Start your journey <ArrowRight size={18} /></Link><Link href="/login" className="landing-secondary">Explore your dashboard</Link></div><div className="mt-11 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-300">{["Designed for students", "Built for universities", "Made for opportunity"].map((item) => <span key={item} className="flex items-center gap-2"><CheckCircle2 size={17} className="landing-accent" />{item}</span>)}</div></div>
-      <div className="hero-visual relative mx-auto w-full max-w-xl" aria-label="Excel Smartic platform overview"><div className="hero-glow" /><div className="hero-console"><div className="hero-console-top"><span className="flex items-center gap-2 text-sm font-bold"><Logo size={27} /> Your progress space</span><span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-bold text-white/55">LIVE</span></div><div className="mt-7 grid grid-cols-[1.15fr_.85fr] gap-3"><div className="hero-metric"><span>Learning path</span><strong>68%</strong><div className="hero-progress"><i /></div><small>3 activities this week</small></div><div className="hero-spotlight"><GraduationCap size={27} /><span>Student profile</span><strong>Ready to grow</strong></div></div><div className="mt-3 grid grid-cols-2 gap-3"><div className="hero-mini"><Layers3 size={18} /><span>Resources</span><strong>24 new</strong></div><div className="hero-mini"><ChartNoAxesCombined size={18} /><span>Opportunities</span><strong>8 matched</strong></div></div></div><div className="hero-float hero-float-one"><BookOpenCheck size={19} /><span><b>Skill checkpoint</b><small>Academic writing complete</small></span><CheckCircle2 size={17} /></div><div className="hero-float hero-float-two"><span className="hero-avatar">AM</span><span><b>Community connection</b><small>Mentor session confirmed</small></span></div></div>
-    </section>
+          <div className="hidden items-center gap-7 text-sm font-semibold text-muted md:flex">
+            <a href="#platform" className="transition-colors hover:text-ink">
+              Platform
+            </a>
+            <a href="#how-it-works" className="transition-colors hover:text-ink">
+              How it works
+            </a>
+            <a href="#who-its-for" className="transition-colors hover:text-ink">
+              Who it is for
+            </a>
+          </div>
 
-    <section id="platform" className="landing-section"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8"><p className="landing-eyebrow">BUILT AROUND YOUR MOMENTUM</p><div className="mt-5 flex flex-col justify-between gap-5 md:flex-row md:items-end"><h2 className="landing-section-title max-w-xl">Everything you need to keep moving.</h2><p className="max-w-md leading-7 text-slate-400">No scattered tools or missed messages. Just a clearer, more connected experience around your student life.</p></div><div className="mt-11 grid gap-4 md:grid-cols-3">{features.map(({ icon: Icon, title, text }) => <article key={title} className="landing-feature"><Icon className="landing-accent" size={25} /><h3>{title}</h3><p>{text}</p><span>Discover more <ArrowRight size={15} /></span></article>)}</div></div></section>
+          <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <Link href="/login" className="btn btn-ghost btn-sm focus-ring hidden sm:inline-flex">
+              Sign in
+            </Link>
+            <Link href="/signup" className="btn btn-primary btn-sm focus-ring">
+              Get Started
+            </Link>
+          </div>
+        </nav>
+      </header>
 
-    <section id="impact" className="mx-auto max-w-7xl px-5 py-20 lg:px-8"><div className="impact-panel"><div><p className="landing-eyebrow">PROGRESS YOU CAN FEEL</p><h2 className="landing-section-title mt-5">Built to turn intention into action.</h2></div><div className="grid grid-cols-2 gap-7 sm:grid-cols-4">{[["01", "Connected profile"], ["02", "Learning plan"], ["03", "Real opportunities"], ["04", "Lasting progress"]].map(([number, text]) => <div key={number}><strong className="impact-number">{number}</strong><p className="mt-2 text-sm text-slate-300">{text}</p></div>)}</div></div></section>
+      {/* ---------------------------------------------------------------------
+          Hero
+          --------------------------------------------------------------------- */}
+      <section className="container-page pb-[var(--section-gap)] pt-12 lg:pt-16">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="animate-fade-rise">
+            <p className="text-eyebrow">
+              Excel Connect Hub
+            </p>
+            <h1 className="text-display mt-5 text-ink">
+              Everything students need to move forward.
+            </h1>
+            <p className="mt-4 font-display text-lg italic text-muted sm:text-xl">Learn. Connect. Discover. Grow.</p>
+            <p className="mt-6 max-w-xl text-base leading-7 text-muted">
+              A digital hub connecting students with learning resources, university services, communities,
+              opportunities, and businesses.
+            </p>
 
-    <section id="how-it-works" className="landing-section"><div className="mx-auto max-w-7xl px-5 py-20 lg:px-8"><p className="landing-eyebrow">HOW IT WORKS</p><div className="mt-9 grid gap-7 lg:grid-cols-[.9fr_1.1fr]"><h2 className="landing-section-title">A simpler rhythm for your goals.</h2><div className="space-y-5">{[["01", "Create your connected profile", "Tell us where you are and where you want to go."], ["02", "Find resources and support", "Access tools, mentors, and services designed for students."], ["03", "Act on the right opportunity", "Turn your preparation into meaningful next steps."]].map(([number, title, text]) => <div key={number} className="how-row"><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></div>)}</div></div></div></section>
-    <section className="mx-auto max-w-7xl px-5 pb-20 lg:px-8"><div className="final-cta"><p className="landing-eyebrow">YOUR NEXT STEP IS HERE</p><h2>Make your student journey more connected.</h2><p>Join Excel Smartic and bring your learning, opportunities, and support network into focus.</p><Link href="/signup" className="landing-primary">Create your account <ArrowRight size={18} /></Link></div></section>
-    <footer className="border-t border-white/[.07]"><div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-7 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-8"><span>© 2026 Excel Smartic. Built for connected progress.</span><div className="flex gap-5"><a href="#platform">Platform</a><Link href="/login">Sign in</Link><Link href="/signup">Create account</Link></div></div></footer>
-  </main>;
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/signup" className="btn btn-primary focus-ring">
+                Get Started <ArrowRight size={17} aria-hidden />
+              </Link>
+              <Link href="/opportunities" className="btn btn-secondary focus-ring">
+                Explore Opportunities
+              </Link>
+            </div>
+
+            <p className="mt-6 text-sm text-muted">
+              Free for students. Businesses and mentors publish through a reviewed listing process.
+            </p>
+          </div>
+
+          {/* -----------------------------------------------------------------
+              Platform preview
+              -----------------------------------------------------------------
+              A map of the real sections of the product, each one a page that
+              exists. No metrics are shown, because a new account has none.
+              --------------------------------------------------------------- */}
+          <div className="animate-fade-rise lg:pl-4" style={{ animationDelay: "120ms" }}>
+            <div className="glass-card overflow-hidden">
+              <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">
+                <Logo size={24} />
+                <span className="text-sm font-bold text-ink">Your hub</span>
+                <span className="badge badge-primary ml-auto">6 sections</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-px bg-line">
+                {SECTIONS.map(({ icon: Icon, title }, index) => (
+                  <div
+                    key={title}
+                    className="stagger-item flex flex-col gap-2 bg-card p-4"
+                    style={{ ["--stagger-index" as string]: index + 2 }}
+                  >
+                    <Icon size={18} className="text-brand" aria-hidden />
+                    <span className="text-sm font-bold text-ink">{title}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-line px-4 py-3">
+                <p className="text-xs leading-5 text-muted">
+                  Sign in to open each section. Your dashboard fills up as opportunities, courses and posts are
+                  published.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------------
+          What the platform actually contains
+          --------------------------------------------------------------------- */}
+      <section id="platform" className="border-y border-line bg-card/40">
+        <div className="container-page py-[var(--section-gap)]">
+          <p className="text-eyebrow">The platform</p>
+          <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <h2 className="text-title max-w-xl text-ink">
+              Six sections, one account.
+            </h2>
+            <p className="max-w-md text-sm leading-6 text-muted">
+              Each one is a working part of the platform. Nothing here is a preview or a waiting list.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {SECTIONS.map(({ icon: Icon, title, text }, index) => (
+              <article
+                key={title}
+                className="stagger-item card card-interactive p-5"
+                style={{ ["--stagger-index" as string]: index }}
+              >
+                <Icon size={22} className="text-brand" aria-hidden />
+                <h3 className="mt-4 text-base font-bold text-ink">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------------
+          How it works
+          --------------------------------------------------------------------- */}
+      <section id="how-it-works" className="container-page py-[var(--section-gap)]">
+        <p className="text-eyebrow">How it works</p>
+        <div className="mt-6 grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <h2 className="text-title text-ink">Three steps to a working account.</h2>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-muted">
+              There is no waiting list and no approval step for students. Businesses and mentors publish through a
+              review queue so that what students see has been checked first.
+            </p>
+          </div>
+          <div className="space-y-4">
+            {STEPS.map(({ number, title, text }) => (
+              <div key={number} className="card flex gap-4 p-5">
+                <span className="font-mono-ui text-sm font-medium text-brand">{number}</span>
+                <div>
+                  <h3 className="text-base font-bold text-ink">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-muted">{text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------------
+          Who it is for
+          --------------------------------------------------------------------- */}
+      <section id="who-its-for" className="border-y border-line bg-card/40">
+        <div className="container-page py-[var(--section-gap)]">
+          <p className="text-eyebrow">Who it is for</p>
+          <h2 className="text-title mt-4 text-ink">
+            Three kinds of account.
+          </h2>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                title: "Students",
+                text: "Build a profile, enrol in courses, apply to opportunities, join discussions, and find university support."
+              },
+              {
+                title: "Businesses and employers",
+                text: "Post jobs and internships, review applicants through a hiring pipeline, and advertise offers to students."
+              },
+              {
+                title: "Mentors",
+                text: "Publish your own courses. The platform hosts and lists them — the course remains yours."
+              }
+            ].map(({ title, text }, index) => (
+              <article
+                key={title}
+                className="stagger-item card p-6"
+                style={{ ["--stagger-index" as string]: index }}
+              >
+                <h3 className="font-display text-xl font-bold text-ink">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-muted">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------------
+          Close
+          --------------------------------------------------------------------- */}
+      <section className="container-page py-[var(--section-gap)]">
+        <div className="card px-6 py-12 text-center sm:px-12">
+          <h2 className="text-title mx-auto max-w-2xl text-ink">
+            Start with the account, the rest follows.
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-muted">
+            Create your profile today and you are ready the moment the right opportunity is posted.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link href="/signup" className="btn btn-primary focus-ring">
+              Get Started <ArrowRight size={17} aria-hidden />
+            </Link>
+            <Link href="/login" className="btn btn-secondary focus-ring">
+              I already have an account
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-line">
+        <div className="container-page flex flex-col gap-4 py-7 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Excel Connect Hub</span>
+          <div className="flex flex-wrap gap-5">
+            <a href="#platform" className="focus-ring transition-colors hover:text-ink">
+              Platform
+            </a>
+            <Link href="/login" className="focus-ring transition-colors hover:text-ink">
+              Sign in
+            </Link>
+            <Link href="/signup" className="focus-ring transition-colors hover:text-ink">
+              Create account
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }

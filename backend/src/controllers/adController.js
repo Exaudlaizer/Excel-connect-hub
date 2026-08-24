@@ -1,6 +1,8 @@
 const { Op } = require("sequelize");
 const Ad = require("../models/Ad");
 const User = require("../models/User");
+const { removeUploads } = require("./uploadController");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 // Explicit whitelist. Spreading req.body into create() would let a caller set
 // `id`, `ownerId`, `createdAt`, or any other column the model happens to have.
@@ -43,12 +45,16 @@ async function listAds(req, res, next) {
       where.status = "approved";
     }
 
-    const ads = await Ad.findAll({
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await Ad.findAndCountAll({
       where,
       include: [{ model: User, as: "owner", attributes: ["id", "name", "role"] }],
-      order: [["createdAt", "DESC"]]
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json({ ads });
+    res.json({ ads: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -93,7 +99,14 @@ async function updateAd(req, res, next) {
     const updates = pickAdFields(req.body);
     if (!isAdmin && Object.keys(updates).length > 0) updates.status = "pending";
 
+    // Artwork that is being replaced is no longer referenced by anything.
+    const orphaned = ["imageUrl", "logoUrl"]
+      .filter((field) => updates[field] !== undefined && updates[field] !== ad[field])
+      .map((field) => ad[field]);
+
     await ad.update(updates);
+    removeUploads(orphaned);
+
     res.json({ ad });
   } catch (error) {
     next(error);
@@ -110,6 +123,8 @@ async function deleteAd(req, res, next) {
     }
 
     await ad.destroy();
+    removeUploads([ad.imageUrl, ad.logoUrl]);
+
     res.json({ message: "Advertisement removed" });
   } catch (error) {
     next(error);

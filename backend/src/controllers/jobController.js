@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const Job = require("../models/Job");
 const User = require("../models/User");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 // Content fields a company may set on its own listing. `status` and `companyId`
 // are excluded on purpose: spreading req.body into create()/update() would let a
@@ -45,12 +46,17 @@ async function listJobs(req, res, next) {
       where.status = "approved";
     }
 
-    const jobs = await Job.findAll({
+    const { page, limit, offset } = readPagination(req.query);
+    // `distinct` so the count reflects jobs, not the rows the join produces.
+    const { rows, count } = await Job.findAndCountAll({
       where,
       include: [{ model: User, as: "company", attributes: ["id", "name", "companyProfile"] }],
-      order: [["createdAt", "DESC"]]
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json({ jobs });
+    res.json({ jobs: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -108,6 +114,22 @@ async function updateJob(req, res, next) {
   }
 }
 
+async function deleteJob(req, res, next) {
+  try {
+    const job = await Job.findByPk(req.params.id);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    if (job.companyId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "You can only remove your own listing" });
+    }
+
+    await job.destroy();
+    res.json({ message: "Listing removed" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function approveJob(req, res, next) {
   try {
     const job = await Job.findByPk(req.params.id);
@@ -119,4 +141,4 @@ async function approveJob(req, res, next) {
   }
 }
 
-module.exports = { listJobs, createJob, myJobs, updateJob, approveJob };
+module.exports = { listJobs, createJob, myJobs, updateJob, deleteJob, approveJob };

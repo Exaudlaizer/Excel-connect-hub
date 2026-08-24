@@ -166,6 +166,46 @@ step(
 );
 
 /* ---------------------------------------------------------------------------
+   7. One-time verification codes
+   ---------------------------------------------------------------------------
+   Replaces the click-a-link flow with a 6-digit code the user types back. The
+   code itself is never stored — only its SHA-256 hash — so a leaked database
+   row cannot be used to verify somebody's address.
+
+   `target` records which address or number the code was issued for. If a user
+   edits their phone after requesting a code, the old code no longer matches the
+   new target and is refused, so a code cannot be used to confirm a value the
+   user never received it at.
+   ------------------------------------------------------------------------- */
+step(
+  "otp_codes: enum type",
+  `DO $$ BEGIN
+     CREATE TYPE enum_otp_codes_purpose AS ENUM ('email', 'phone');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+);
+
+step(
+  "otp_codes: table",
+  `CREATE TABLE IF NOT EXISTS otp_codes (
+     id           UUID PRIMARY KEY,
+     "userId"     UUID NOT NULL REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+     purpose      enum_otp_codes_purpose NOT NULL,
+     "codeHash"   VARCHAR(64) NOT NULL,
+     target       VARCHAR(190) NOT NULL,
+     "expiresAt"  TIMESTAMPTZ NOT NULL,
+     "consumedAt" TIMESTAMPTZ,
+     attempts     INTEGER NOT NULL DEFAULT 0,
+     "createdAt"  TIMESTAMPTZ NOT NULL,
+     "updatedAt"  TIMESTAMPTZ NOT NULL
+   );`
+);
+
+step(
+  "users: add phoneVerified",
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS "phoneVerified" BOOLEAN NOT NULL DEFAULT FALSE;`
+);
+
+/* ---------------------------------------------------------------------------
    6. Indexes
    ---------------------------------------------------------------------------
    Every list endpoint filters on a foreign key, a status, or both, and every one
@@ -189,7 +229,11 @@ const indexes = [
   ["community_replies_post_id_idx", `community_replies ("postId", "createdAt")`],
   ["community_replies_author_id_idx", `community_replies ("authorId")`],
   ["services_status_category_idx", `services (status, category)`],
-  ["services_created_by_id_idx", `services ("createdById")`]
+  ["services_created_by_id_idx", `services ("createdById")`],
+  // The lookup every verification attempt makes: newest live code for this
+  // user and purpose.
+  ["otp_codes_lookup_idx", `otp_codes ("userId", purpose, "consumedAt", "expiresAt" DESC)`],
+  ["otp_codes_expires_idx", `otp_codes ("expiresAt")`]
 ];
 
 indexes.forEach(([name, target]) => {

@@ -1,334 +1,183 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Inbox, Search, ShieldAlert } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BookOpen,
+  BriefcaseBusiness,
+  LayoutDashboard,
+  LifeBuoy,
+  Megaphone,
+  MessagesSquare,
+  UsersRound
+} from "lucide-react";
 import { Shell } from "@/components/Shell";
-import { MetricCard } from "@/components/MetricCard";
 import { SectionHeader } from "@/components/SectionHeader";
+import { MetricCard } from "@/components/MetricCard";
+import { ErrorState, Skeleton } from "@/components/ui/States";
+import { AdminAds } from "@/components/admin/AdminAds";
+import { AdminCommunity } from "@/components/admin/AdminCommunity";
+import { AdminCourses, AdminJobs } from "@/components/admin/AdminContent";
+import { AdminServices } from "@/components/admin/AdminServices";
+import { AdminUsers } from "@/components/admin/AdminUsers";
 import { api } from "@/lib/api";
-import { Role, useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 
-type PendingRow = { id: string; title: string; meta: string };
-type ManagedUser = {
-  _id: string;
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  status: "active" | "suspended";
-  createdAt?: string;
-};
+/**
+ * Admin panel.
+ *
+ * One place to manage everything the platform holds: advertisements and their
+ * artwork, employer opportunities, mentor courses, the services directory, the
+ * community feed, and accounts. Each tab is a self-contained panel that owns its
+ * own queries, so opening the panel does not load six sections at once.
+ */
 
-const ROLE_FILTERS: Array<{ value: string; label: string }> = [
-  { value: "", label: "All" },
-  { value: "student", label: "Youth" },
-  { value: "company", label: "Companies" },
-  { value: "mentor", label: "Mentors" },
-  { value: "admin", label: "Admins" }
+type Tab = "overview" | "ads" | "opportunities" | "courses" | "services" | "community" | "accounts";
+
+const TABS: Array<{ id: Tab; label: string; icon: React.ElementType }> = [
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "ads", label: "Advertisements", icon: Megaphone },
+  { id: "opportunities", label: "Opportunities", icon: BriefcaseBusiness },
+  { id: "courses", label: "Courses", icon: BookOpen },
+  { id: "services", label: "Services", icon: LifeBuoy },
+  { id: "community", label: "Community", icon: MessagesSquare },
+  { id: "accounts", label: "Accounts", icon: UsersRound }
 ];
 
-const ROLE_LABEL: Record<Role, string> = {
-  student: "Youth",
-  company: "Company",
-  mentor: "Mentor",
-  admin: "Admin"
-};
-
-type Tab = "overview" | "users";
-
-export default function AdminPage() {
-  const { user, token } = useAuth();
-  const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("overview");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [search, setSearch] = useState("");
-  const [actionError, setActionError] = useState("");
-
-  const isAdmin = user?.role === "admin";
+function Overview({ onJump }: { onJump: (tab: Tab) => void }) {
+  const { token } = useAuth();
 
   const analytics = useQuery({
-    queryKey: ["admin-analytics-full"],
-    queryFn: () => api<{ analytics: Record<string, number> }>("/admin/analytics", { token }),
-    enabled: isAdmin
+    queryKey: ["admin-analytics"],
+    queryFn: () => api<{ analytics: Record<string, number> }>("/admin/analytics", { token })
   });
 
-  const pendingJobs = useQuery({
-    queryKey: ["pending-jobs"],
-    queryFn: () => api<{ jobs: Array<{ _id: string; title: string; type: string }> }>("/jobs?status=pending", { token }),
-    enabled: isAdmin
-  });
-  const pendingAds = useQuery({
-    queryKey: ["pending-ads"],
-    queryFn: () => api<{ ads: Array<{ _id: string; title: string; category: string }> }>("/ads?status=pending", { token }),
-    enabled: isAdmin
-  });
-  const pendingCourses = useQuery({
-    queryKey: ["pending-courses"],
-    queryFn: () =>
-      api<{ courses: Array<{ _id: string; title: string; category: string; provider?: { name: string } }> }>(
-        "/courses?status=pending",
-        { token }
-      ),
-    enabled: isAdmin
-  });
-
-  const users = useQuery({
-    queryKey: ["admin-users", roleFilter, search],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (roleFilter) params.set("role", roleFilter);
-      if (search.trim()) params.set("q", search.trim());
-      const qs = params.toString();
-      return api<{ users: ManagedUser[] }>(`/users${qs ? `?${qs}` : ""}`, { token });
-    },
-    enabled: isAdmin && tab === "users"
-  });
-
-  const approve = useMutation({
-    mutationFn: ({ path, status }: { path: string; status: "approved" | "rejected" }) =>
-      api(path, { method: "PATCH", token, body: JSON.stringify({ status }) }),
-    onSuccess: () => {
-      setActionError("");
-      ["pending-jobs", "pending-ads", "pending-courses", "admin-analytics-full"].forEach((key) =>
-        queryClient.invalidateQueries({ queryKey: [key] })
-      );
-    },
-    onError: (err: unknown) => setActionError(err instanceof Error ? err.message : "Action failed")
-  });
-
-  const setUserStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "active" | "suspended" }) =>
-      api(`/users/${id}/status`, { method: "PATCH", token, body: JSON.stringify({ status }) }),
-    onSuccess: () => {
-      setActionError("");
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-    },
-    onError: (err: unknown) => setActionError(err instanceof Error ? err.message : "Could not update the account")
-  });
-
-  if (!isAdmin) {
+  if (analytics.isLoading) {
     return (
-      <Shell>
-        <SectionHeader title="Admin" subtitle="Administrator access is required." />
-        <div className="rounded-lg border border-line bg-card p-10 text-center">
-          <ShieldAlert className="mx-auto mb-3 text-muted" size={28} />
-          <p className="font-semibold text-ink">You do not have access to this area.</p>
-        </div>
-      </Shell>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="card card-pad">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="mt-3 h-8 w-14" />
+            <Skeleton className="mt-3 h-3 w-32" />
+          </div>
+        ))}
+      </div>
     );
   }
 
-  const queues = [
-    {
-      title: "Jobs",
-      rows: (pendingJobs.data?.jobs || []).map<PendingRow>((row) => ({ id: row._id, title: row.title, meta: row.type })),
-      path: (id: string) => `/jobs/${id}/approval`
-    },
-    {
-      title: "Advertisements",
-      rows: (pendingAds.data?.ads || []).map<PendingRow>((row) => ({ id: row._id, title: row.title, meta: row.category })),
-      path: (id: string) => `/ads/${id}/approval`
-    },
-    {
-      title: "Mentor courses",
-      rows: (pendingCourses.data?.courses || []).map<PendingRow>((row) => ({
-        id: row._id,
-        title: row.title,
-        meta: row.provider?.name ? `${row.category} · by ${row.provider.name}` : row.category
-      })),
-      path: (id: string) => `/courses/${id}/approval`
-    }
+  if (analytics.isError) {
+    return <ErrorState error={analytics.error} onRetry={() => analytics.refetch()} title="We could not load platform figures" />;
+  }
+
+  const data = analytics.data?.analytics;
+  if (!data) return null;
+
+  // These are counts read straight from the database, not estimates.
+  const CARDS = [
+    { label: "Accounts", value: data.users, detail: "Registered on the platform", icon: UsersRound },
+    { label: "Students", value: data.students, detail: "Student accounts", icon: UsersRound },
+    { label: "Businesses", value: data.companies, detail: "Employer and business accounts", icon: BriefcaseBusiness },
+    { label: "Mentors", value: data.mentors, detail: "Publishing courses", icon: BookOpen },
+    { label: "Opportunities", value: data.jobs, detail: "Jobs and internships posted", icon: BriefcaseBusiness },
+    { label: "Applications", value: data.applications, detail: "Submitted by students", icon: UsersRound },
+    { label: "Advertisements", value: data.ads, detail: "Business listings", icon: Megaphone },
+    { label: "Courses", value: data.courses, detail: "Published by mentors", icon: BookOpen },
+    { label: "Community posts", value: data.posts, detail: "Discussions and announcements", icon: MessagesSquare },
+    { label: "Services", value: data.services, detail: "Active directory entries", icon: LifeBuoy }
   ];
 
+  const QUEUES: Array<{ label: string; value: number; tab: Tab }> = [
+    { label: "Advertisements", value: data.pendingAds, tab: "ads" },
+    { label: "Opportunities", value: data.pendingJobs, tab: "opportunities" },
+    { label: "Courses", value: data.pendingCourses, tab: "courses" }
+  ];
+
+  const totalPending = data.pendingApprovals;
+
   return (
-    <Shell>
+    <div className="stack-gap">
+      {/* Review queue first: it is the thing an administrator opens the panel
+          to deal with. */}
+      <section>
+        <h2 className="text-heading text-ink">Awaiting review</h2>
+        <p className="mt-1.5 text-sm text-muted">
+          {totalPending === 0
+            ? "Nothing is waiting for a decision."
+            : `${totalPending} ${totalPending === 1 ? "item needs" : "items need"} a decision before students can see them.`}
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {QUEUES.map(({ label, value, tab }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => onJump(tab)}
+              className="card card-interactive focus-ring card-pad text-left"
+            >
+              <p className="text-sm font-semibold text-muted">{label}</p>
+              <p className={`mt-2 font-display text-3xl font-bold ${value > 0 ? "text-brand" : "text-ink"}`}>{value}</p>
+              <p className="mt-2 text-sm text-muted">{value > 0 ? "Open the queue" : "All clear"}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-heading text-ink">Platform figures</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {CARDS.map(({ label, value, detail, icon }, index) => (
+            <div key={label} className="stagger-item" style={{ ["--stagger-index" as string]: index }}>
+              <MetricCard label={label} value={value ?? 0} detail={detail} icon={icon} />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  const [tab, setTab] = useState<Tab>("overview");
+
+  return (
+    <Shell roles={["admin"]}>
       <SectionHeader
-        title="Admin Dashboard"
-        subtitle="Monitor platform growth, moderate pending listings, and manage accounts."
+        title="Admin panel"
+        subtitle="Manage content, artwork, advertisements, the services directory, and accounts."
       />
 
-      <div className="mb-6 inline-grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
-        {(["overview", "users"] as const).map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setTab(item)}
-            className={`focus-ring rounded-md px-4 py-2 text-sm font-semibold capitalize transition-all ${
-              tab === item ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
+      {/* Scrolls horizontally on narrow screens rather than wrapping into a
+          block of buttons that pushes the content off the fold. */}
+      <div className="mb-8 -mx-[var(--gutter)] overflow-x-auto px-[var(--gutter)]">
+        <div className="flex min-w-max gap-6 border-b border-line" role="tablist" aria-label="Admin sections">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`nav-tab focus-ring flex items-center gap-2 whitespace-nowrap ${
+                tab === id ? "nav-tab-active" : ""
+              }`}
+            >
+              <Icon size={15} aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {actionError && <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</p>}
-
-      {tab === "overview" && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <MetricCard label="Youth" value={analytics.data?.analytics.students ?? "-"} detail="Registered youth accounts" />
-            <MetricCard label="Companies" value={analytics.data?.analytics.companies ?? "-"} detail="Recruiters and SMEs" />
-            <MetricCard label="Mentors" value={analytics.data?.analytics.mentors ?? "-"} detail="Offering courses" />
-            <MetricCard label="Courses" value={analytics.data?.analytics.courses ?? "-"} detail="Mentor course listings" />
-            <MetricCard
-              label="Pending approvals"
-              value={analytics.data?.analytics.pendingApprovals ?? "-"}
-              detail="Requires moderation"
-            />
-          </div>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            {queues.map((group) => (
-              <div key={group.title} className="rounded-lg border border-line bg-card p-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-bold text-ink">{group.title}</h2>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-                    {group.rows.length}
-                  </span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {group.rows.length === 0 && (
-                    <div className="rounded-md border border-dashed border-line py-8 text-center">
-                      <Inbox className="mx-auto mb-2 text-muted" size={20} />
-                      <p className="text-sm text-muted">No pending items.</p>
-                    </div>
-                  )}
-                  {group.rows.map((row) => (
-                    <div key={row.id} className="rounded-md border border-line p-3">
-                      <p className="font-semibold text-ink">{row.title}</p>
-                      <p className="text-sm text-muted">{row.meta}</p>
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          disabled={approve.isPending}
-                          onClick={() => approve.mutate({ path: group.path(row.id), status: "approved" })}
-                          className="focus-ring rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-night transition-colors hover:bg-brandDark disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          disabled={approve.isPending}
-                          onClick={() => {
-                            if (confirm(`Reject "${row.title}"? The owner will need to resubmit.`)) {
-                              approve.mutate({ path: group.path(row.id), status: "rejected" });
-                            }
-                          }}
-                          className="focus-ring rounded-md border border-line px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {tab === "users" && (
-        <div className="rounded-lg border border-line bg-card shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap gap-1">
-              {ROLE_FILTERS.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setRoleFilter(item.value)}
-                  className={`focus-ring rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${
-                    roleFilter === item.value ? "bg-brand/10 text-brand" : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search name or email"
-                className="focus-ring w-full rounded-md border border-line py-2 pl-9 pr-3 text-sm sm:w-64"
-              />
-            </div>
-          </div>
-
-          {users.isLoading && <p className="p-6 text-sm text-muted">Loading accounts...</p>}
-          {users.isError && <p className="p-6 text-sm text-red-700">Could not load accounts.</p>}
-          {users.data?.users.length === 0 && <p className="p-6 text-sm text-muted">No accounts match this filter.</p>}
-
-          {(users.data?.users.length ?? 0) > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-line text-xs uppercase text-muted">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Name</th>
-                    <th className="px-4 py-3 font-semibold">Email</th>
-                    <th className="px-4 py-3 font-semibold">Role</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 text-right font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.data?.users.map((row) => {
-                    const isSelf = row.id === user?.id;
-                    const suspended = row.status === "suspended";
-                    return (
-                      <tr key={row.id} className="border-b border-line last:border-0">
-                        <td className="px-4 py-3 font-semibold text-ink">
-                          {row.name}
-                          {isSelf && <span className="ml-2 text-xs font-normal text-muted">(you)</span>}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">{row.email}</td>
-                        <td className="px-4 py-3">
-                          <span className="rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-                            {ROLE_LABEL[row.role] ?? row.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`rounded px-2 py-1 text-xs font-semibold ${
-                              suspended ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                            }`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {/* The API also blocks this: suspending yourself is an instant lockout. */}
-                          {isSelf ? (
-                            <span className="text-xs text-muted">—</span>
-                          ) : (
-                            <button
-                              disabled={setUserStatus.isPending}
-                              onClick={() => {
-                                const next = suspended ? "active" : "suspended";
-                                if (next === "active" || confirm(`Suspend ${row.name}? They will be logged out.`)) {
-                                  setUserStatus.mutate({ id: row.id, status: next });
-                                }
-                              }}
-                              className={`focus-ring rounded-md px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
-                                suspended
-                                  ? "bg-brand text-night hover:bg-brandDark"
-                                  : "border border-line text-slate-700 hover:bg-slate-50"
-                              }`}
-                            >
-                              {suspended ? "Reactivate" : "Suspend"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      <div key={tab} className="animate-fade-rise">
+        {tab === "overview" && <Overview onJump={setTab} />}
+        {tab === "ads" && <AdminAds />}
+        {tab === "opportunities" && <AdminJobs />}
+        {tab === "courses" && <AdminCourses />}
+        {tab === "services" && <AdminServices />}
+        {tab === "community" && <AdminCommunity />}
+        {tab === "accounts" && <AdminUsers />}
+      </div>
     </Shell>
   );
 }

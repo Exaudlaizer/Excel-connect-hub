@@ -27,21 +27,21 @@ type Application = {
 const postingStatusStyles: Record<string, string> = {
   pending: "bg-accent/10 text-accent",
   approved: "bg-brand/10 text-brand",
-  rejected: "bg-red-50 text-red-700",
-  closed: "bg-slate-100 text-slate-600"
+  rejected: "bg-dangerSurface text-danger",
+  closed: "bg-secondary text-muted"
 };
 
 const applicationStatusStyles: Record<string, string> = {
-  submitted: "bg-slate-100 text-slate-600",
-  reviewing: "bg-blue-50 text-blue-700",
+  submitted: "bg-secondary text-muted",
+  reviewing: "bg-infoSurface text-info",
   shortlisted: "bg-accent/10 text-accent",
   hired: "bg-brand/10 text-brand",
-  rejected: "bg-red-50 text-red-700"
+  rejected: "bg-dangerSurface text-danger"
 };
 
 function StatusBadge({ status, styles }: { status: string; styles: Record<string, string> }) {
   return (
-    <span className={`rounded px-2 py-1 text-xs font-semibold uppercase ${styles[status] || "bg-slate-100 text-slate-600"}`}>
+    <span className={`rounded px-2 py-1 text-xs font-semibold uppercase ${styles[status] || "bg-secondary text-muted"}`}>
       {status}
     </span>
   );
@@ -121,7 +121,7 @@ export default function OpportunitiesPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-4">
           {isEmployer && (
-            <section className="rounded-lg border border-line bg-card p-5 shadow-sm">
+            <section className="card card-pad">
               <h2 className="font-bold text-ink">My postings</h2>
               <p className="mt-1 text-sm text-muted">Your submissions and their approval status. Only approved listings are public.</p>
               <div className="mt-4 space-y-2">
@@ -153,7 +153,7 @@ export default function OpportunitiesPage() {
             {data?.jobs?.map((job) => {
               const appliedStatus = appliedStatusByJob.get(job._id);
               return (
-                <article key={job._id} className="rounded-lg border border-line bg-card p-5 shadow-sm">
+                <article key={job._id} className="card card-pad">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-bold text-ink">{job.title}</h3>
@@ -163,7 +163,7 @@ export default function OpportunitiesPage() {
                     </div>
                     <span className="rounded bg-accent/10 px-2 py-1 text-xs font-semibold uppercase text-accent">{job.type}</span>
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-700">{job.description}</p>
+                  <p className="mt-4 text-sm leading-6 text-muted">{job.description}</p>
                   {user?.role === "student" &&
                     (appliedStatus ? (
                       <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-muted">
@@ -185,7 +185,7 @@ export default function OpportunitiesPage() {
         </div>
 
         {isEmployer && (
-          <form onSubmit={submitJob} className="h-fit rounded-lg border border-line bg-card p-5 shadow-sm">
+          <form onSubmit={submitJob} className="h-fit card card-pad">
             <h2 className="font-bold text-ink">Post opportunity</h2>
             <input name="title" placeholder="Title" className="focus-ring mt-4 w-full rounded-md border border-line px-3 py-2" required />
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -201,14 +201,14 @@ export default function OpportunitiesPage() {
             </div>
             <input name="location" placeholder="Location" className="focus-ring mt-3 w-full rounded-md border border-line px-3 py-2" required />
             <textarea name="description" placeholder="Description (min 20 characters)" rows={5} className="focus-ring mt-3 w-full rounded-md border border-line px-3 py-2" required />
-            <button disabled={createJob.isPending} className="focus-ring mt-3 w-full rounded-md bg-brand px-4 py-2 font-semibold text-night disabled:opacity-60">
+            <button type="submit" disabled={createJob.isPending} className="btn btn-primary focus-ring mt-3 w-full">
               {createJob.isPending ? "Submitting…" : "Submit"}
             </button>
           </form>
         )}
 
         {user?.role === "student" && (
-          <aside className="h-fit rounded-lg border border-line bg-card p-5 shadow-sm">
+          <aside className="h-fit card card-pad">
             <h2 className="font-bold text-ink">My applications</h2>
             <div className="mt-4 space-y-3">
               {myApplications.isLoading && <p className="text-sm text-muted">Loading your applications…</p>}

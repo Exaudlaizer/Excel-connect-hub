@@ -1,6 +1,6 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { approveJob, createJob, listJobs, myJobs, updateJob } = require("../controllers/jobController");
+const { approveJob, createJob, deleteJob, listJobs, myJobs, updateJob } = require("../controllers/jobController");
 const { authorize, optionalProtect, protect } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
@@ -18,6 +18,7 @@ router.get("/", optionalProtect, listJobs);
 router.get("/mine", protect, authorize("company", "admin"), myJobs);
 router.post("/", protect, authorize("company", "admin"), jobValidation, validate, createJob);
 router.patch("/:id", protect, authorize("company", "admin"), updateJob);
+router.delete("/:id", protect, authorize("company", "admin"), deleteJob);
 router.patch(
   "/:id/approval",
   protect,

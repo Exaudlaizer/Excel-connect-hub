@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const { signToken } = require("../utils/tokens");
-const { issueVerification } = require("./emailVerificationController");
+const { issueCode } = require("./otpController");
 
 function publicUser(user) {
   return {
@@ -12,6 +12,7 @@ function publicUser(user) {
     status: user.status,
     emailVerified: user.emailVerified,
     phone: user.phone,
+    phoneVerified: user.phoneVerified,
     preferences: user.preferences || {},
     studentProfile: user.studentProfile,
     companyProfile: user.companyProfile,
@@ -41,7 +42,9 @@ async function register(req, res, next) {
       role: safeRole,
       phone: phone ? String(phone).trim() : null
     });
-    await issueVerification(user);
+    // Delivered by email; a failure here must not fail the registration, the
+    // user can request another code from the verification screen.
+    await issueCode(user, "email").catch((error) => console.error("Could not send verification code:", error.message));
     res.status(201).json({
       token: signToken(user),
       user: publicUser(user)

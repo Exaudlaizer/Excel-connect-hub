@@ -2,7 +2,12 @@ const express = require("express");
 const { body } = require("express-validator");
 const { login, me, register, SELF_SERVICE_ROLES } = require("../controllers/authController");
 const { forgotPassword, resetPassword } = require("../controllers/passwordResetController");
-const { resendVerification, verifyEmail } = require("../controllers/emailVerificationController");
+const {
+  confirmCode,
+  confirmCodePublic,
+  requestCode,
+  requestCodePublic
+} = require("../controllers/otpController");
 const { protect } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
@@ -52,8 +57,37 @@ router.post(
   resetPassword
 );
 
-router.post("/verify-email", [body("token").trim().notEmpty().withMessage("Verification token is required")], validate, verifyEmail);
-router.post("/resend-verification", [body("email").isEmail().normalizeEmail().withMessage("Valid email is required")], validate, resendVerification);
+/* ---------------------------------------------------------------------------
+   Verification codes
+   ---------------------------------------------------------------------------
+   Two pairs of endpoints for the same flow. The authenticated pair is used from
+   inside the app (and is the only way to confirm a phone number, since that
+   requires knowing whose phone it is). The public pair exists for someone who
+   registered, closed the tab, and came back without signing in.
+   ------------------------------------------------------------------------- */
+
+const codeValidator = body("code")
+  .trim()
+  .matches(/^[0-9]{6}$/)
+  .withMessage("Enter the 6-digit code from your email");
+
+const purposeValidator = body("purpose").optional().isIn(["email", "phone"]).withMessage("Invalid verification type");
+
+router.post("/verification/request", protect, [purposeValidator], validate, requestCode);
+router.post("/verification/confirm", protect, [purposeValidator, codeValidator], validate, confirmCode);
+
+router.post(
+  "/verification/request-public",
+  [body("email").isEmail().normalizeEmail().withMessage("Valid email is required")],
+  validate,
+  requestCodePublic
+);
+router.post(
+  "/verification/confirm-public",
+  [body("email").isEmail().normalizeEmail().withMessage("Valid email is required"), codeValidator],
+  validate,
+  confirmCodePublic
+);
 
 router.get("/me", protect, me);
 

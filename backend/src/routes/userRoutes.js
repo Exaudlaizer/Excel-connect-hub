@@ -1,6 +1,6 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { listUsers, updateMe, updateUserStatus } = require("../controllers/userController");
+const { listUsers, updateMe, updateUserRole, updateUserStatus } = require("../controllers/userController");
 const { authorize, protect } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
@@ -15,6 +15,15 @@ router.patch(
   [body("status").isIn(["active", "suspended"]).withMessage("Invalid status")],
   validate,
   updateUserStatus
+);
+
+router.patch(
+  "/:id/role",
+  protect,
+  authorize("admin"),
+  [body("role").isIn(["student", "company", "mentor", "admin"]).withMessage("Invalid role")],
+  validate,
+  updateUserRole
 );
 
 module.exports = router;

@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const { sequelize } = require("../config/db");
 const Course = require("../models/Course");
 const User = require("../models/User");
+const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function listCourses(req, res, next) {
   try {
@@ -22,12 +23,16 @@ async function listCourses(req, res, next) {
       where.status = "approved";
     }
 
-    const courses = await Course.findAll({
+    const { page, limit, offset } = readPagination(req.query);
+    const { rows, count } = await Course.findAndCountAll({
       where,
       include: [{ model: User, as: "provider", attributes: ["id", "name", "mentorProfile"] }],
-      order: [["createdAt", "DESC"]]
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      distinct: true
     });
-    res.json({ courses });
+    res.json({ courses: rows, pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -102,6 +107,49 @@ async function enrollCourse(req, res, next) {
   }
 }
 
+// Owner or admin may edit the content of a course. An owner's edit returns the
+// course to the review queue so approved copy cannot be swapped after the fact.
+async function updateCourse(req, res, next) {
+  try {
+    const course = await Course.findByPk(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    const isAdmin = req.user.role === "admin";
+    if (course.providerId !== req.user.id && !isAdmin) {
+      return res.status(403).json({ message: "You can only edit your own course" });
+    }
+
+    const updates = {};
+    EDITABLE_COURSE_FIELDS.forEach((field) => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    if (isAdmin && req.body.status !== undefined) updates.status = req.body.status;
+    else if (Object.keys(updates).length > 0) updates.status = "pending";
+
+    await course.update(updates);
+    res.json({ course });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteCourse(req, res, next) {
+  try {
+    const course = await Course.findByPk(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    if (course.providerId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "You can only remove your own course" });
+    }
+
+    await course.destroy();
+    res.json({ message: "Course removed" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateCourseStatus(req, res, next) {
   try {
     const course = await Course.findByPk(req.params.id);
@@ -113,4 +161,4 @@ async function updateCourseStatus(req, res, next) {
   }
 }
 
-module.exports = { listCourses, createCourse, enrollCourse, updateCourseStatus };
+module.exports = { listCourses, createCourse, enrollCourse, updateCourse, deleteCourse, updateCourseStatus };

@@ -29,11 +29,11 @@ type Applicant = {
 const statusFlow: ApplicantStatus[] = ["submitted", "reviewing", "shortlisted", "hired", "rejected"];
 
 const statusStyles: Record<ApplicantStatus, string> = {
-  submitted: "bg-slate-100 text-slate-600",
-  reviewing: "bg-blue-50 text-blue-700",
+  submitted: "bg-secondary text-muted",
+  reviewing: "bg-infoSurface text-info",
   shortlisted: "bg-accent/10 text-accent",
   hired: "bg-brand/10 text-brand",
-  rejected: "bg-red-50 text-red-700"
+  rejected: "bg-dangerSurface text-danger"
 };
 
 export default function ApplicantsPage() {
@@ -80,7 +80,7 @@ export default function ApplicantsPage() {
       />
 
       {isLoading && <p className="text-sm text-muted">Loading applicants…</p>}
-      {isError && <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{(error as Error)?.message || "Could not load applicants."}</p>}
+      {isError && <p className="rounded-md bg-dangerSurface px-4 py-3 text-sm text-danger">{(error as Error)?.message || "Could not load applicants."}</p>}
       {!isLoading && !isError && groups.length === 0 && (
         <p className="rounded-md border border-dashed border-line bg-card px-4 py-8 text-center text-sm text-muted">
           No applications yet. Once young people apply to your opportunities, they will appear here.
@@ -97,7 +97,7 @@ export default function ApplicantsPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {group.applicants.map((application) => (
-                <article key={application._id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <article key={application._id} className="card card-pad">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-bold text-ink">{application.student?.name || "Applicant"}</p>
@@ -109,7 +109,7 @@ export default function ApplicantsPage() {
                   </div>
 
                   {application.student?.studentProfile && (
-                    <p className="mt-2 text-sm text-slate-600">
+                    <p className="mt-2 text-sm text-muted">
                       {[application.student.studentProfile.program, application.student.studentProfile.university]
                         .filter(Boolean)
                         .join(" · ")}
@@ -119,14 +119,14 @@ export default function ApplicantsPage() {
                   {application.student?.studentProfile?.skills?.length ? (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {application.student.studentProfile.skills.slice(0, 8).map((skill) => (
-                        <span key={skill} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                        <span key={skill} className="rounded bg-secondary px-2 py-0.5 text-xs text-muted">
                           {skill}
                         </span>
                       ))}
                     </div>
                   ) : null}
 
-                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-700">{application.coverLetter}</p>
+                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-muted">{application.coverLetter}</p>
 
                   {application.cvUrl && (
                     <a
@@ -139,7 +139,7 @@ export default function ApplicantsPage() {
                     </a>
                   )}
 
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
                     {statusFlow
                       .filter((status) => status !== application.status)
                       .map((status) => (
@@ -149,7 +149,7 @@ export default function ApplicantsPage() {
                           onClick={() => setStatus.mutate({ id: application._id, status })}
                           className={`focus-ring rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-all hover:-translate-y-0.5 disabled:opacity-60 ${
                             status === "rejected"
-                              ? "border border-line text-slate-700 hover:bg-slate-50"
+                              ? "border border-line text-muted hover:bg-secondary"
                               : "bg-brand text-night hover:bg-brandDark"
                           }`}
                         >

@@ -1,5 +1,6 @@
-const app = require("./app");
 const { connectDB, sequelize } = require("./config/db");
+const { closeRateLimitStore, initRateLimitStore } = require("./src/config/rateLimit");
+const { verifyTransport } = require("./src/utils/mailer");
 
 const PORT = process.env.PORT || 5000;
 
@@ -7,6 +8,16 @@ let server;
 
 async function start() {
   await connectDB();
+
+  // Both of these must settle before the app module is loaded: the limiters are
+  // built at require time and need to know which store they are using, and a
+  // bad SMTP password should be reported at boot rather than discovered by the
+  // first user who tries to register.
+  await initRateLimitStore();
+  await verifyTransport();
+
+  const app = require("./app");
+
   server = app.listen(PORT, () => {
     console.log(`Excel Connect Hub API running on port ${PORT}`);
   });
@@ -19,16 +30,16 @@ start().catch((error) => {
   process.exit(1);
 });
 
-// Close the HTTP server and the connection pool on shutdown so in-flight
-// requests finish and Postgres does not accumulate orphaned connections.
+// Close the HTTP server and the connection pools on shutdown so in-flight
+// requests finish and neither Postgres nor Redis accumulates orphaned
+// connections.
 function shutdown(signal) {
   console.log(`\n${signal} received, shutting down...`);
 
   const done = () =>
-    sequelize
-      .close()
-      .catch(() => {})
-      .then(() => process.exit(0));
+    Promise.all([sequelize.close().catch(() => {}), closeRateLimitStore().catch(() => {})]).then(() =>
+      process.exit(0)
+    );
 
   if (!server) return done();
 

@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const { Op } = require("sequelize");
 const PasswordResetToken = require("../models/PasswordResetToken");
 const User = require("../models/User");
-const { sendMail } = require("../utils/mailer");
+const { passwordResetTemplate, sendMail } = require("../utils/mailer");
 
 const TOKEN_TTL_MINUTES = 60;
 
@@ -46,17 +46,11 @@ async function forgotPassword(req, res, next) {
 
     await sendMail({
       to: user.email,
-      subject: "Reset your Excel Connect Hub password",
-      text: [
-        `Hello ${user.name},`,
-        "",
-        "We received a request to reset your password. Open the link below to choose a new one:",
-        "",
-        resetLink(rawToken),
-        "",
-        `This link expires in ${TOKEN_TTL_MINUTES} minutes and can only be used once.`,
-        "If you did not request this, you can ignore this email — your password will not change."
-      ].join("\n")
+      ...passwordResetTemplate({
+        name: user.name,
+        link: resetLink(rawToken),
+        minutes: TOKEN_TTL_MINUTES
+      })
     });
 
     res.json(GENERIC_RESPONSE);

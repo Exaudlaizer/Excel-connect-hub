@@ -70,19 +70,11 @@ services:
       - key: PUBLIC_API_ORIGIN
         value: https://excel-connect-hub-api.onrender.com
 
-      # --- Optional, all safe to leave unset ---------------------------------
-      # Without SMTP, verification codes are printed to the Render logs and the
-      # app still works end to end.
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM
-        sync: false
+      # SMTP is deliberately absent. mailer.js prints verification codes to the
+      # service log when it is unconfigured, and every flow still works end to
+      # end. Listing the keys here — even empty — would make Render stop and ask
+      # for five values at apply time for no benefit. Add them in the dashboard
+      # later to send real email.
 
       # Payments stay off until this is true, and checkout answers
       # "coming soon". No Flutterwave keys are needed to deploy.

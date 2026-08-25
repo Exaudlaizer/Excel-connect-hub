@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { SiteHeroBackground } from "@/components/SiteHeroBackground";
 
 /**
  * Landing page.
@@ -101,8 +102,9 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------------
           Hero
           --------------------------------------------------------------------- */}
-      <section className="container-marketing pb-[var(--section-gap)] pt-12 lg:pt-16">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative overflow-hidden">
+        <SiteHeroBackground />
+        <div className="container-marketing grid items-center gap-12 pb-[var(--section-gap)] pt-12 lg:grid-cols-[1.05fr_0.95fr] lg:pt-16">
           <div className="animate-fade-rise">
             <p className="text-eyebrow">
               Excel Connect Hub

@@ -297,6 +297,27 @@ step(
 );
 
 /* ---------------------------------------------------------------------------
+   9. Site settings — a small key/value store for branding and configuration
+   ---------------------------------------------------------------------------
+   A single flexible table rather than a column per setting, so adding the next
+   piece of admin-editable branding (a logo, a hero image, an accent) is a new
+   row, never a migration. Each value is JSONB, and a `public` flag decides
+   whether anonymous visitors may read it — background images are public; an
+   internal toggle would not be.
+   ------------------------------------------------------------------------- */
+step(
+  "site_settings: table",
+  `CREATE TABLE IF NOT EXISTS site_settings (
+     key         VARCHAR(80) PRIMARY KEY,
+     value       JSONB NOT NULL DEFAULT '{}'::jsonb,
+     "isPublic"  BOOLEAN NOT NULL DEFAULT TRUE,
+     "updatedById" UUID REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL,
+     "createdAt" TIMESTAMPTZ NOT NULL,
+     "updatedAt" TIMESTAMPTZ NOT NULL
+   );`
+);
+
+/* ---------------------------------------------------------------------------
    6. Indexes
    ---------------------------------------------------------------------------
    Every list endpoint filters on a foreign key, a status, or both, and every one

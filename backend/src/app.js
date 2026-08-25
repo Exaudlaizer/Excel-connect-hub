@@ -16,6 +16,7 @@ const communityRoutes = require("./routes/communityRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const billingRoutes = require("./routes/billingRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { assertEnv } = require("./config/env");
@@ -186,6 +187,7 @@ app.use("/api/community", communityRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/billing", billingRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use(notFound);

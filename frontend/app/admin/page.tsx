@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Megaphone,
   MessagesSquare,
+  Image as ImageIcon,
   UsersRound
 } from "lucide-react";
 import { Shell } from "@/components/Shell";
@@ -16,6 +17,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { MetricCard } from "@/components/MetricCard";
 import { ErrorState, Skeleton } from "@/components/ui/States";
 import { AdminAds } from "@/components/admin/AdminAds";
+import { AdminBranding } from "@/components/admin/AdminBranding";
 import { AdminCommunity } from "@/components/admin/AdminCommunity";
 import { AdminCourses, AdminJobs } from "@/components/admin/AdminContent";
 import { AdminServices } from "@/components/admin/AdminServices";
@@ -32,7 +34,7 @@ import { useAuth } from "@/lib/auth";
  * own queries, so opening the panel does not load six sections at once.
  */
 
-type Tab = "overview" | "ads" | "opportunities" | "courses" | "services" | "community" | "accounts";
+type Tab = "overview" | "ads" | "opportunities" | "courses" | "services" | "community" | "accounts" | "branding";
 
 const TABS: Array<{ id: Tab; label: string; icon: React.ElementType }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -41,7 +43,8 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ElementType }> = [
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "services", label: "Services", icon: LifeBuoy },
   { id: "community", label: "Community", icon: MessagesSquare },
-  { id: "accounts", label: "Accounts", icon: UsersRound }
+  { id: "accounts", label: "Accounts", icon: UsersRound },
+  { id: "branding", label: "Branding", icon: ImageIcon }
 ];
 
 function Overview({ onJump }: { onJump: (tab: Tab) => void }) {
@@ -177,6 +180,7 @@ export default function AdminPage() {
         {tab === "services" && <AdminServices />}
         {tab === "community" && <AdminCommunity />}
         {tab === "accounts" && <AdminUsers />}
+        {tab === "branding" && <AdminBranding />}
       </div>
     </Shell>
   );

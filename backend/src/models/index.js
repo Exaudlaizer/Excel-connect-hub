@@ -9,6 +9,7 @@ const Payment = require("./Payment");
 const Plan = require("./Plan");
 const PasswordResetToken = require("./PasswordResetToken");
 const Service = require("./Service");
+const SiteSetting = require("./SiteSetting");
 const Subscription = require("./Subscription");
 const User = require("./User");
 
@@ -69,6 +70,7 @@ module.exports = {
   Plan,
   PasswordResetToken,
   Service,
+  SiteSetting,
   Subscription,
   User
 };

@@ -1,0 +1,8 @@
+Excel-connect-hub/
+├── vercel.json       ← CREATE IT HERE
+├── frontend/
+│   ├── package.json
+│   └── ...
+└── backend/
+    ├── package.json
+    └── ...

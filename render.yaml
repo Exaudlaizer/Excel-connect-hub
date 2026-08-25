@@ -54,20 +54,21 @@ services:
       - key: TRUST_PROXY
         value: "1"
 
-      # Set to the Vercel frontend URL after its first deploy. Comma-separate
-      # extra origins. Until this is right, the browser blocks every API call.
+      # The frontend service defined below. Comma-separate extra origins (a
+      # custom domain, or http://localhost:3000 for local work against this
+      # API). Until this matches exactly, the browser blocks every API call.
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://excel-connect-hub-web.onrender.com
 
       # Accept https://*.vercel.app preview deployments as well. Turn this off
       # once you are done testing.
       - key: ALLOW_VERCEL_PREVIEWS
-        value: "true"
+        value: "false"
 
-      # Absolute origin used to build upload URLs, so links are https and point
-      # at the public host rather than at localhost.
+      # Absolute origin used to build upload URLs, so image links are https and
+      # point at the public host rather than at localhost.
       - key: PUBLIC_API_ORIGIN
-        sync: false
+        value: https://excel-connect-hub-api.onrender.com
 
       # --- Optional, all safe to leave unset ---------------------------------
       # Without SMTP, verification codes are printed to the Render logs and the
@@ -87,6 +88,27 @@ services:
       # "coming soon". No Flutterwave keys are needed to deploy.
       - key: PAYMENTS_ENABLED
         value: "false"
+
+  # The Next.js frontend. A Web Service, not a Static Site: this app is not a
+  # static export — it has server components and `next start` needs to run.
+  - type: web
+    name: excel-connect-hub-web
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      # Compiled into the browser bundle at BUILD time, so this cannot be
+      # derived from the API service at runtime and changing it later needs a
+      # rebuild, not just a restart. Correct it if Render assigns the API a
+      # different hostname than the one below.
+      - key: NEXT_PUBLIC_API_URL
+        value: https://excel-connect-hub-api.onrender.com/api
 
 databases:
   - name: excel-connect-hub-db

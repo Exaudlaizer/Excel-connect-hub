@@ -206,6 +206,97 @@ step(
 );
 
 /* ---------------------------------------------------------------------------
+   8. Billing — plans, subscriptions, and a payment ledger
+   ---------------------------------------------------------------------------
+   The platform is free today. This schema exists so that switching payments on
+   later is a configuration change, not a migration: every account already has a
+   Free subscription, and the paid plans sit dormant until PAYMENTS_ENABLED is
+   set.
+
+   Amounts are stored as integer minor units (cents of the currency) to avoid
+   the rounding errors that come with floating-point money. Currency is TZS by
+   default, which has no minor unit in practice, but keeping the convention means
+   a USD plan later needs no special case.
+   ------------------------------------------------------------------------- */
+step(
+  "plans: enum type",
+  `DO $$ BEGIN
+     CREATE TYPE enum_plans_audience AS ENUM ('all', 'company', 'mentor', 'business');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+);
+
+step(
+  "plans: table",
+  `CREATE TABLE IF NOT EXISTS plans (
+     id            UUID PRIMARY KEY,
+     key           VARCHAR(60) NOT NULL UNIQUE,
+     name          VARCHAR(120) NOT NULL,
+     description   TEXT,
+     audience      enum_plans_audience NOT NULL DEFAULT 'all',
+     "priceMinor"  INTEGER NOT NULL DEFAULT 0,
+     currency      VARCHAR(3) NOT NULL DEFAULT 'TZS',
+     interval      VARCHAR(12) NOT NULL DEFAULT 'month',
+     features      JSONB NOT NULL DEFAULT '[]'::jsonb,
+     "isActive"    BOOLEAN NOT NULL DEFAULT TRUE,
+     "sortOrder"   INTEGER NOT NULL DEFAULT 0,
+     "createdAt"   TIMESTAMPTZ NOT NULL,
+     "updatedAt"   TIMESTAMPTZ NOT NULL
+   );`
+);
+
+step(
+  "subscriptions: enum types",
+  `DO $$ BEGIN
+     CREATE TYPE enum_subscriptions_status AS ENUM ('active', 'trialing', 'past_due', 'canceled');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+   DO $$ BEGIN
+     CREATE TYPE enum_subscriptions_provider AS ENUM ('none', 'manual', 'flutterwave');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+);
+
+step(
+  "subscriptions: table",
+  `CREATE TABLE IF NOT EXISTS subscriptions (
+     id                   UUID PRIMARY KEY,
+     "userId"             UUID NOT NULL UNIQUE REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+     "planKey"            VARCHAR(60) NOT NULL DEFAULT 'free' REFERENCES plans(key) ON UPDATE CASCADE,
+     status               enum_subscriptions_status NOT NULL DEFAULT 'active',
+     provider             enum_subscriptions_provider NOT NULL DEFAULT 'none',
+     "providerRef"        VARCHAR(190),
+     "currentPeriodStart" TIMESTAMPTZ,
+     "currentPeriodEnd"   TIMESTAMPTZ,
+     "cancelAtPeriodEnd"  BOOLEAN NOT NULL DEFAULT FALSE,
+     "createdAt"          TIMESTAMPTZ NOT NULL,
+     "updatedAt"          TIMESTAMPTZ NOT NULL
+   );`
+);
+
+step(
+  "payments: enum type",
+  `DO $$ BEGIN
+     CREATE TYPE enum_payments_status AS ENUM ('pending', 'successful', 'failed', 'refunded');
+   EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+);
+
+step(
+  "payments: table",
+  `CREATE TABLE IF NOT EXISTS payments (
+     id            UUID PRIMARY KEY,
+     "userId"      UUID NOT NULL REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+     "planKey"     VARCHAR(60) REFERENCES plans(key) ON UPDATE CASCADE ON DELETE SET NULL,
+     provider      enum_subscriptions_provider NOT NULL DEFAULT 'flutterwave',
+     "txRef"       VARCHAR(120) NOT NULL UNIQUE,
+     "providerId"  VARCHAR(120),
+     "amountMinor" INTEGER NOT NULL,
+     currency      VARCHAR(3) NOT NULL DEFAULT 'TZS',
+     status        enum_payments_status NOT NULL DEFAULT 'pending',
+     meta          JSONB NOT NULL DEFAULT '{}'::jsonb,
+     "createdAt"   TIMESTAMPTZ NOT NULL,
+     "updatedAt"   TIMESTAMPTZ NOT NULL
+   );`
+);
+
+/* ---------------------------------------------------------------------------
    6. Indexes
    ---------------------------------------------------------------------------
    Every list endpoint filters on a foreign key, a status, or both, and every one
@@ -233,7 +324,10 @@ const indexes = [
   // The lookup every verification attempt makes: newest live code for this
   // user and purpose.
   ["otp_codes_lookup_idx", `otp_codes ("userId", purpose, "consumedAt", "expiresAt" DESC)`],
-  ["otp_codes_expires_idx", `otp_codes ("expiresAt")`]
+  ["otp_codes_expires_idx", `otp_codes ("expiresAt")`],
+  ["subscriptions_plan_key_idx", `subscriptions ("planKey")`],
+  ["payments_user_id_idx", `payments ("userId", "createdAt" DESC)`],
+  ["payments_status_idx", `payments (status)`]
 ];
 
 indexes.forEach(([name, target]) => {

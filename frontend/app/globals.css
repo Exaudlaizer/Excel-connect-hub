@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -184,12 +184,12 @@ html {
 
 body {
   margin: 0;
-  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
   /* Contextual alternates and proportional numerals: cleaner digits in tables
      and better spacing in headings, at no cost. */
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-feature-settings: "ss01";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -207,22 +207,23 @@ table,
 /* ---------------------------------------------------------------------------
    TYPE
    ---------------------------------------------------------------------------
-   Sora for headings — a geometric grotesque that stays sharp at display sizes
-   and reads as considered rather than decorative. Manrope carries body and UI
-   text, DM Mono handles eyebrows and numerals.
+   Outfit for headings — a geometric sans with open counters that stays sharp at
+   display sizes and reads as confident rather than corporate. Figtree carries
+   body and UI text: taller x-height than Manrope, so small text holds up.
+   JetBrains Mono handles eyebrows and code-like numerals.
 
    Sizes are fluid via clamp() so a heading is proportionate on a phone and on a
    desktop without a breakpoint for every step.
    ------------------------------------------------------------------------- */
 
 .font-display {
-  font-family: "Sora", "Manrope", system-ui, sans-serif;
+  font-family: "Outfit", "Figtree", system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.028em;
 }
 
 .text-display {
-  font-family: "Sora", "Manrope", system-ui, sans-serif;
+  font-family: "Outfit", "Figtree", system-ui, sans-serif;
   font-size: clamp(2.25rem, 1.35rem + 4.1vw, 4.15rem);
   font-weight: 800;
   line-height: 1.03;
@@ -230,7 +231,7 @@ table,
 }
 
 .text-title {
-  font-family: "Sora", "Manrope", system-ui, sans-serif;
+  font-family: "Outfit", "Figtree", system-ui, sans-serif;
   font-size: clamp(1.65rem, 1.2rem + 1.9vw, 2.5rem);
   font-weight: 700;
   line-height: 1.12;
@@ -238,7 +239,7 @@ table,
 }
 
 .text-heading {
-  font-family: "Sora", "Manrope", system-ui, sans-serif;
+  font-family: "Outfit", "Figtree", system-ui, sans-serif;
   font-size: clamp(1.25rem, 1.1rem + 0.7vw, 1.6rem);
   font-weight: 700;
   line-height: 1.2;
@@ -248,7 +249,7 @@ table,
 /* Section labels: small, spaced, monospaced. Used above a heading, never as a
    heading itself. */
 .text-eyebrow {
-  font-family: "DM Mono", ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -266,7 +267,7 @@ table,
 }
 
 .font-mono-ui {
-  font-family: "DM Mono", ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 button,
@@ -486,6 +487,15 @@ select.field {
   padding: 0.8rem 0.95rem;
   font-size: 0.85rem;
   line-height: 1.5;
+  /* Alerts often pair a sentence with an action button. Without this the text
+     refuses to shrink below its longest unbreakable word — an email address,
+     typically — and shoves the button off a narrow screen. */
+  flex-wrap: wrap;
+}
+
+.alert > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .alert-error {
@@ -717,7 +727,7 @@ select.field {
    ========================================================================= */
 
 :root {
-  --gutter: clamp(1rem, 0.55rem + 2.2vw, 2rem);
+  --gutter: clamp(1rem, 0.6rem + 1.9vw, 2.75rem);
   --section-gap: clamp(2.5rem, 1.6rem + 4vw, 5rem);
   --stack-gap: clamp(1.25rem, 0.9rem + 1.4vw, 2rem);
   /* Clears the fixed mobile dock; nothing on desktop, where there is no dock. */
@@ -730,10 +740,29 @@ select.field {
   }
 }
 
-/* Page gutter. Centres content and keeps the same margin on every screen. */
+/* ---------------------------------------------------------------------------
+   Page gutter.
+   ---------------------------------------------------------------------------
+   The app shell is deliberately NOT a narrow centred column. It already loses
+   16rem to the sidebar, and centring what is left inside an 84rem box left a
+   wide screen with empty margins on both sides while the content stayed cramped.
+   Here the content simply fills the space it has, with a gutter either side.
+
+   The very wide cap only stops line lengths becoming absurd on an ultrawide
+   display; below about 2000px it never applies.
+   ------------------------------------------------------------------------- */
 .container-page {
   width: 100%;
-  max-width: 84rem;
+  max-width: 120rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Marketing and other standalone pages, where a measured centred column is the
+   right choice because there is no shell taking up one side. */
+.container-marketing {
+  width: 100%;
+  max-width: 82rem;
   margin-inline: auto;
   padding-inline: var(--gutter);
 }

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, ImageOff, Loader2, Megaphone, Pencil, Plus, Trash2, X } from "lucide-react";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError, api } from "@/lib/api";
@@ -63,14 +64,16 @@ export function AdminAds() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Partial<Ad> | null>(null);
   const [error, setError] = useState("");
   const [image, setImage] = useState("");
   const [logo, setLogo] = useState("");
 
   const ads = useQuery({
-    queryKey: ["admin-ads", status],
-    queryFn: () => api<{ ads: Ad[] }>(`/ads${status ? `?status=${status}` : ""}`, { token })
+    queryKey: ["admin-ads", status, page],
+    queryFn: () =>
+      api<{ ads: Ad[]; pagination: PageMeta }>(`/ads?page=${page}${status ? `&status=${status}` : ""}`, { token })
   });
 
   function refresh() {
@@ -147,7 +150,10 @@ export function AdminAds() {
             <button
               key={item || "all"}
               type="button"
-              onClick={() => setStatus(item)}
+              onClick={() => {
+                setStatus(item);
+                setPage(1);
+              }}
               aria-pressed={status === item}
               className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
                 status === item ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -267,6 +273,8 @@ export function AdminAds() {
           ))}
         </div>
       )}
+
+      <Pagination meta={ads.data?.pagination} onChange={setPage} label="advertisements" />
 
       <Modal
         open={Boolean(editing)}

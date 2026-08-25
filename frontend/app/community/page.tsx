@@ -7,6 +7,7 @@ import { AlertCircle, Loader2, MessagesSquare, Pin, Plus, Reply, X } from "lucid
 import { Shell } from "@/components/Shell";
 import { SectionHeader } from "@/components/SectionHeader";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -148,11 +149,16 @@ function PostForm({ onClose }: { onClose: () => void }) {
 export default function CommunityPage() {
   const { token } = useAuth();
   const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
 
   const posts = useQuery({
-    queryKey: ["community", category],
-    queryFn: () => api<{ posts: Post[] }>(`/community${category ? `?category=${category}` : ""}`, { token })
+    queryKey: ["community", category, page],
+    queryFn: () =>
+      api<{ posts: Post[]; pagination: PageMeta }>(
+        `/community?page=${page}${category ? `&category=${category}` : ""}`,
+        { token }
+      )
   });
 
   const rows = posts.data?.posts || [];
@@ -176,7 +182,10 @@ export default function CommunityPage() {
           <button
             key={item || "all"}
             type="button"
-            onClick={() => setCategory(item)}
+            onClick={() => {
+              setCategory(item);
+              setPage(1);
+            }}
             aria-pressed={category === item}
             className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
               category === item ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -240,6 +249,8 @@ export default function CommunityPage() {
           ))}
         </div>
       )}
+
+      <Pagination meta={posts.data?.pagination} onChange={setPage} label="posts" />
     </Shell>
   );
 }

@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Subscription = require("../models/Subscription");
 
 async function protect(req, res, next) {
   try {
@@ -11,7 +12,9 @@ async function protect(req, res, next) {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findByPk(decoded.id);
+    const user = await User.findByPk(decoded.id, {
+      include: [{ model: Subscription, as: "subscription" }]
+    });
 
     if (!user || user.status !== "active") {
       return res.status(401).json({ message: "Invalid authenticated user" });

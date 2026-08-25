@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, BookOpen, BriefcaseBusiness, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -105,13 +106,17 @@ function ModerationList({ config }: { config: Config }) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Row | null>(null);
   const [error, setError] = useState("");
 
   const list = useQuery({
-    queryKey: ["admin", config.key, status],
+    queryKey: ["admin", config.key, status, page],
     queryFn: () =>
-      api<Record<string, Row[]>>(`${config.endpoint}${status ? `?status=${status}` : ""}`, { token })
+      api<Record<string, Row[]> & { pagination: PageMeta }>(
+        `${config.endpoint}?page=${page}${status ? `&status=${status}` : ""}`,
+        { token }
+      )
   });
 
   function refresh() {
@@ -170,7 +175,10 @@ function ModerationList({ config }: { config: Config }) {
           <button
             key={item || "all"}
             type="button"
-            onClick={() => setStatus(item)}
+            onClick={() => {
+              setStatus(item);
+              setPage(1);
+            }}
             aria-pressed={status === item}
             className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
               status === item ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -251,6 +259,8 @@ function ModerationList({ config }: { config: Config }) {
           ))}
         </div>
       )}
+
+      <Pagination meta={list.data?.pagination} onChange={setPage} label={config.label} />
 
       <Modal
         open={Boolean(editing)}

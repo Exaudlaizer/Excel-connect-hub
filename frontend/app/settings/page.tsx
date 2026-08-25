@@ -2,10 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { AlertCircle, Check, CheckCircle2, Loader2, Mail, Palette, ShieldCheck, UserRound } from "lucide-react";
+import { AlertCircle, BadgeCheck, Check, CheckCircle2, CreditCard, Loader2, Mail, Palette, ShieldCheck, UserRound } from "lucide-react";
 import { Shell } from "@/components/Shell";
 import { SectionHeader } from "@/components/SectionHeader";
 import { THEMES, ThemeName, useTheme } from "@/components/ThemeProvider";
+import { VerificationPanel } from "@/components/VerificationPanel";
+import { BillingPanel } from "@/components/BillingPanel";
 import { ApiError, api } from "@/lib/api";
 import { AuthUser, useAuth } from "@/lib/auth";
 
@@ -17,11 +19,13 @@ import { AuthUser, useAuth } from "@/lib/auth";
  * happens in the background and never blocks the change.
  */
 
-type Tab = "appearance" | "account";
+type Tab = "appearance" | "account" | "verification" | "billing";
 
 const TABS: Array<{ id: Tab; label: string; icon: React.ElementType }> = [
   { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "account", label: "Account", icon: UserRound }
+  { id: "account", label: "Account", icon: UserRound },
+  { id: "verification", label: "Verification", icon: BadgeCheck },
+  { id: "billing", label: "Plans & billing", icon: CreditCard }
 ];
 
 function ThemeCard({ theme, selected, onSelect }: { theme: (typeof THEMES)[number]; selected: boolean; onSelect: () => void }) {
@@ -100,7 +104,7 @@ function AppearanceTab() {
   );
 }
 
-function AccountTab() {
+function AccountTab({ onVerify }: { onVerify: () => void }) {
   const { user, token, applyUser } = useAuth();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -159,9 +163,15 @@ function AccountTab() {
               <Mail size={15} className="shrink-0" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{user?.email}</span>
               {user?.emailVerified ? (
-                <span className="badge badge-success shrink-0">Verified</span>
+                <span className="badge badge-success shrink-0">Confirmed</span>
               ) : (
-                <span className="badge badge-warning shrink-0">Unverified</span>
+                <button
+                  type="button"
+                  onClick={onVerify}
+                  className="focus-ring shrink-0 rounded text-xs font-bold text-brand hover:underline"
+                >
+                  Confirm now
+                </button>
               )}
             </p>
           </div>
@@ -222,7 +232,10 @@ export default function SettingsPage() {
       </div>
 
       <div key={tab} className="animate-fade-rise">
-        {tab === "appearance" ? <AppearanceTab /> : <AccountTab />}
+        {tab === "appearance" && <AppearanceTab />}
+        {tab === "account" && <AccountTab onVerify={() => setTab("verification")} />}
+        {tab === "verification" && <VerificationPanel />}
+        {tab === "billing" && <BillingPanel />}
       </div>
     </Shell>
   );

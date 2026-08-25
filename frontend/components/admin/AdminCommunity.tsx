@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, MessagesSquare, Pin, PinOff, Trash2 } from "lucide-react";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -34,10 +35,15 @@ export function AdminCommunity() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
 
   const posts = useQuery({
-    queryKey: ["admin-community", category],
-    queryFn: () => api<{ posts: Post[] }>(`/community${category ? `?category=${category}` : ""}`, { token })
+    queryKey: ["admin-community", category, page],
+    queryFn: () =>
+      api<{ posts: Post[]; pagination: PageMeta }>(
+        `/community?page=${page}${category ? `&category=${category}` : ""}`,
+        { token }
+      )
   });
 
   function refresh() {
@@ -66,7 +72,10 @@ export function AdminCommunity() {
           <button
             key={item || "all"}
             type="button"
-            onClick={() => setCategory(item)}
+            onClick={() => {
+              setCategory(item);
+              setPage(1);
+            }}
             aria-pressed={category === item}
             className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
               category === item ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -144,6 +153,8 @@ export function AdminCommunity() {
           ))}
         </div>
       )}
+
+      <Pagination meta={posts.data?.pagination} onChange={setPage} label="posts" />
     </section>
   );
 }

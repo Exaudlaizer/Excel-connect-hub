@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, LifeBuoy, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -43,12 +44,13 @@ const EMPTY: Partial<Service> = { name: "", category: "academic", description: "
 export function AdminServices() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
   const [error, setError] = useState("");
 
   const services = useQuery({
-    queryKey: ["admin-services"],
-    queryFn: () => api<{ services: Service[] }>("/services", { token })
+    queryKey: ["admin-services", page],
+    queryFn: () => api<{ services: Service[]; pagination: PageMeta }>(`/services?page=${page}`, { token })
   });
 
   function refresh() {
@@ -179,6 +181,8 @@ export function AdminServices() {
           ))}
         </div>
       )}
+
+      <Pagination meta={services.data?.pagination} onChange={setPage} label="services" />
 
       <Modal
         open={Boolean(editing)}

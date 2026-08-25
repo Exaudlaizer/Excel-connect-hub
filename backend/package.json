@@ -9,7 +9,8 @@
     "seed:admin": "node src/scripts/createAdmin.js",
     "db:migrate": "node src/scripts/migrate.js",
     "db:reset": "node src/scripts/resetDatabase.js",
-    "uploads:prune": "node src/scripts/pruneUploads.js"
+    "uploads:prune": "node src/scripts/pruneUploads.js",
+    "seed:plans": "node src/scripts/seedPlans.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

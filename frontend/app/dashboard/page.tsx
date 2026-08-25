@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   Megaphone,
   MessagesSquare,
+  MailWarning,
   Pin,
   UserRound
 } from "lucide-react";
@@ -157,11 +158,26 @@ export default function DashboardPage() {
         subtitle="Your learning, opportunities, community and support — all from one account."
       />
 
+      {/* An unconfirmed address is worth surfacing once, with the action next to
+          it — not as a banner that cannot be acted on. */}
+      {user && !user.emailVerified && (
+        <div className="alert alert-info mb-6" role="status">
+          <MailWarning size={17} className="mt-0.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1">
+            Your email address is not confirmed yet. We sent a 6-digit code to{" "}
+            <strong className="break-all text-ink">{user.email}</strong>.
+          </span>
+          <Link href="/settings" className="btn btn-primary btn-sm focus-ring shrink-0">
+            Confirm email
+          </Link>
+        </div>
+      )}
+
       {/* Prompt rather than a fabricated completion percentage. */}
       {needsProfile && (
         <div className="alert alert-info mb-6" role="status">
           <UserRound size={17} className="mt-0.5 shrink-0" aria-hidden />
-          <span className="flex-1">
+          <span className="min-w-0 flex-1">
             Your profile is not complete yet. Employers and mentors read it when you apply or enrol.
           </span>
           <Link href="/profile" className="btn btn-primary btn-sm focus-ring shrink-0">

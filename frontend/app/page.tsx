@@ -63,7 +63,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-surface">
       <header className="glass-bar sticky top-0 z-20">
-        <nav className="container-page flex items-center justify-between gap-4 py-4">
+        <nav className="container-marketing flex items-center justify-between gap-4 py-4">
           <Link href="/" className="focus-ring flex items-center gap-3 rounded-xl">
             <Logo size={38} />
             <span className="min-w-0">
@@ -101,7 +101,7 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------------
           Hero
           --------------------------------------------------------------------- */}
-      <section className="container-page pb-[var(--section-gap)] pt-12 lg:pt-16">
+      <section className="container-marketing pb-[var(--section-gap)] pt-12 lg:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="animate-fade-rise">
             <p className="text-eyebrow">
@@ -172,7 +172,7 @@ export default function HomePage() {
           What the platform actually contains
           --------------------------------------------------------------------- */}
       <section id="platform" className="border-y border-line bg-card/40">
-        <div className="container-page py-[var(--section-gap)]">
+        <div className="container-marketing py-[var(--section-gap)]">
           <p className="text-eyebrow">The platform</p>
           <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <h2 className="text-title max-w-xl text-ink">
@@ -202,7 +202,7 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------------
           How it works
           --------------------------------------------------------------------- */}
-      <section id="how-it-works" className="container-page py-[var(--section-gap)]">
+      <section id="how-it-works" className="container-marketing py-[var(--section-gap)]">
         <p className="text-eyebrow">How it works</p>
         <div className="mt-6 grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
           <div>
@@ -230,7 +230,7 @@ export default function HomePage() {
           Who it is for
           --------------------------------------------------------------------- */}
       <section id="who-its-for" className="border-y border-line bg-card/40">
-        <div className="container-page py-[var(--section-gap)]">
+        <div className="container-marketing py-[var(--section-gap)]">
           <p className="text-eyebrow">Who it is for</p>
           <h2 className="text-title mt-4 text-ink">
             Three kinds of account.
@@ -267,7 +267,7 @@ export default function HomePage() {
       {/* ---------------------------------------------------------------------
           Close
           --------------------------------------------------------------------- */}
-      <section className="container-page py-[var(--section-gap)]">
+      <section className="container-marketing py-[var(--section-gap)]">
         <div className="card px-6 py-12 text-center sm:px-12">
           <h2 className="text-title mx-auto max-w-2xl text-ink">
             Start with the account, the rest follows.
@@ -287,7 +287,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-line">
-        <div className="container-page flex flex-col gap-4 py-7 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+        <div className="container-marketing flex flex-col gap-4 py-7 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
           <span>© {new Date().getFullYear()} Excel Connect Hub</span>
           <div className="flex flex-wrap gap-5">
             <a href="#platform" className="focus-ring transition-colors hover:text-ink">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, UsersRound } from "lucide-react";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { ApiError, api } from "@/lib/api";
 import { Role, useAuth } from "@/lib/auth";
 
@@ -33,6 +34,7 @@ export function AdminUsers() {
   const { user, token } = useAuth();
   const queryClient = useQueryClient();
   const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [error, setError] = useState("");
@@ -44,13 +46,12 @@ export function AdminUsers() {
   }, [search]);
 
   const users = useQuery({
-    queryKey: ["admin-users", roleFilter, debounced],
+    queryKey: ["admin-users", roleFilter, debounced, page],
     queryFn: () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ page: String(page) });
       if (roleFilter) params.set("role", roleFilter);
       if (debounced) params.set("q", debounced);
-      const qs = params.toString();
-      return api<{ users: ManagedUser[] }>(`/users${qs ? `?${qs}` : ""}`, { token });
+      return api<{ users: ManagedUser[]; pagination: PageMeta }>(`/users?${params}`, { token });
     }
   });
 
@@ -89,7 +90,10 @@ export function AdminUsers() {
             <button
               key={item.label}
               type="button"
-              onClick={() => setRoleFilter(item.value)}
+              onClick={() => {
+                setRoleFilter(item.value);
+                setPage(1);
+              }}
               aria-pressed={roleFilter === item.value}
               className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                 roleFilter === item.value ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -271,6 +275,8 @@ export function AdminUsers() {
           </div>
         </>
       )}
+
+      <Pagination meta={users.data?.pagination} onChange={setPage} label="accounts" />
     </section>
   );
 }

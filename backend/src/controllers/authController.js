@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Subscription = require("../models/Subscription");
 const { signToken } = require("../utils/tokens");
 const { issueCode } = require("./otpController");
 
@@ -14,6 +15,7 @@ function publicUser(user) {
     phone: user.phone,
     phoneVerified: user.phoneVerified,
     preferences: user.preferences || {},
+    planKey: user.subscription?.planKey || "free",
     studentProfile: user.studentProfile,
     companyProfile: user.companyProfile,
     mentorProfile: user.mentorProfile
@@ -42,6 +44,10 @@ async function register(req, res, next) {
       role: safeRole,
       phone: phone ? String(phone).trim() : null
     });
+    // Every account starts on the Free plan. Created here so the record exists
+    // from the first request rather than being lazily backfilled later.
+    await Subscription.create({ userId: user.id, planKey: "free", status: "active", provider: "none" });
+
     // Delivered by email; a failure here must not fail the registration, the
     // user can request another code from the verification screen.
     await issueCode(user, "email").catch((error) => console.error("Could not send verification code:", error.message));
@@ -57,7 +63,10 @@ async function register(req, res, next) {
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    const user = await User.findOne({
+      where: { email: email.toLowerCase() },
+      include: [{ model: Subscription, as: "subscription" }]
+    });
 
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });

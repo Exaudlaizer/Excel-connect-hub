@@ -14,12 +14,20 @@ export type ApiOptions = RequestInit & {
 export class ApiError extends Error {
   status: number;
   fieldErrors: Array<{ field: string; message: string }>;
+  /** Seconds to wait, when the server said how long a throttle lasts. */
+  retryAfter?: number;
 
-  constructor(message: string, status: number, fieldErrors: Array<{ field: string; message: string }> = []) {
+  constructor(
+    message: string,
+    status: number,
+    fieldErrors: Array<{ field: string; message: string }> = [],
+    retryAfter?: number
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.retryAfter = retryAfter;
   }
 
   /** No response at all: DNS failure, refused connection, offline. */
@@ -70,7 +78,11 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   const data = await response.json().catch(() => ({} as Record<string, unknown>));
 
   if (!response.ok) {
-    const body = data as { message?: string; errors?: Array<{ field: string; message: string }> };
+    const body = data as {
+      message?: string;
+      errors?: Array<{ field: string; message: string }>;
+      retryAfter?: number;
+    };
     // Field-level validation messages are written for humans and are safe to
     // surface. Everything else falls back to the status wording above so no
     // internal server text is ever rendered.
@@ -81,7 +93,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       STATUS_MESSAGES[response.status] ||
       "Request failed. Please try again.";
 
-    throw new ApiError(message, response.status, body.errors || []);
+    throw new ApiError(message, response.status, body.errors || [], body.retryAfter);
   }
 
   return data as T;

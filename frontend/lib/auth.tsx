@@ -47,6 +47,8 @@ export type AuthUser = {
   status?: "active" | "suspended";
   emailVerified?: boolean;
   phone?: string | null;
+  phoneVerified?: boolean;
+  planKey?: string;
   preferences?: { theme?: ThemeName };
   studentProfile?: StudentProfile;
   companyProfile?: CompanyProfile;

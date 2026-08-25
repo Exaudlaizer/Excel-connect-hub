@@ -5,8 +5,11 @@ const CommunityReply = require("./CommunityReply");
 const Course = require("./Course");
 const Job = require("./Job");
 const OtpCode = require("./OtpCode");
+const Payment = require("./Payment");
+const Plan = require("./Plan");
 const PasswordResetToken = require("./PasswordResetToken");
 const Service = require("./Service");
+const Subscription = require("./Subscription");
 const User = require("./User");
 
 User.hasMany(Job, { foreignKey: "companyId", as: "jobs" });
@@ -44,6 +47,16 @@ PasswordResetToken.belongsTo(User, { foreignKey: "userId", as: "user" });
 User.hasMany(OtpCode, { foreignKey: "userId", as: "otpCodes", onDelete: "CASCADE" });
 OtpCode.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+// Billing. One subscription per account; the plan is referenced by its stable
+// key rather than its id so a plan can be re-seeded without breaking links.
+User.hasOne(Subscription, { foreignKey: "userId", as: "subscription", onDelete: "CASCADE" });
+Subscription.belongsTo(User, { foreignKey: "userId", as: "user" });
+Subscription.belongsTo(Plan, { foreignKey: "planKey", targetKey: "key", as: "plan" });
+
+User.hasMany(Payment, { foreignKey: "userId", as: "payments", onDelete: "CASCADE" });
+Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
+Payment.belongsTo(Plan, { foreignKey: "planKey", targetKey: "key", as: "plan" });
+
 module.exports = {
   Ad,
   Application,
@@ -52,7 +65,10 @@ module.exports = {
   Course,
   Job,
   OtpCode,
+  Payment,
+  Plan,
   PasswordResetToken,
   Service,
+  Subscription,
   User
 };

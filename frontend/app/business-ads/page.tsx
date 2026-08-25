@@ -17,6 +17,7 @@ import {
 import { Shell } from "@/components/Shell";
 import { SectionHeader } from "@/components/SectionHeader";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/States";
+import { PageMeta, Pagination } from "@/components/ui/Pagination";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -370,11 +371,16 @@ export default function BusinessAdsPage() {
   const { user, token } = useAuth();
   const queryClient = useQueryClient();
   const [category, setCategory] = useState("");
+  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
 
   const ads = useQuery({
-    queryKey: ["ads", category],
-    queryFn: () => api<{ ads: Ad[] }>(`/ads${category ? `?category=${category}` : ""}`, { token })
+    queryKey: ["ads", category, page],
+    queryFn: () =>
+      api<{ ads: Ad[]; pagination: PageMeta }>(
+        `/ads?page=${page}${category ? `&category=${category}` : ""}`,
+        { token }
+      )
   });
 
   const myAds = useQuery({
@@ -444,7 +450,10 @@ export default function BusinessAdsPage() {
             <button
               key={item || "all"}
               type="button"
-              onClick={() => setCategory(item)}
+              onClick={() => {
+                setCategory(item);
+                setPage(1);
+              }}
               aria-pressed={category === item}
               className={`focus-ring rounded-lg px-3 py-1.5 text-sm font-semibold capitalize transition-colors ${
                 category === item ? "bg-brand text-night" : "bg-secondary text-muted hover:text-ink"
@@ -487,6 +496,8 @@ export default function BusinessAdsPage() {
             ))}
           </div>
         )}
+
+        <Pagination meta={ads.data?.pagination} onChange={setPage} label="advertisements" />
       </section>
     </Shell>
   );

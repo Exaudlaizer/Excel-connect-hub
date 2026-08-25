@@ -1,3 +1,9 @@
+// Loaded first: config/db reads DATABASE_URL at module scope, and it is now
+// required before ./app (which used to be what pulled dotenv in). Without this
+// line the connection string falls back to its default and the API starts
+// against the wrong database.
+require("dotenv").config();
+
 const { connectDB, sequelize } = require("./config/db");
 const { closeRateLimitStore, initRateLimitStore } = require("./src/config/rateLimit");
 const { verifyTransport } = require("./src/utils/mailer");

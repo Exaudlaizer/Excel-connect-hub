@@ -19,7 +19,7 @@ neither being true:
   reuses them. Serverless re-does that per cold start.
 
 Render runs an ordinary always-on Node process, so `server.js` deploys with no
-changes at all. `backend/render.yaml` describes the whole thing.
+changes at all. `render.yaml` describes the whole thing.
 
 > **Uploads on the free plan.** Render's free tier has no persistent disk. Files
 > survive while the instance is alive but a redeploy or a spin-down wipes them.
@@ -34,7 +34,7 @@ Nothing here stops your local servers — Render and Vercel build on their own
 machines.
 
 ```powershell
-git add DEPLOYMENT.md backend/render.yaml backend/src/config/db.js backend/src/app.js backend/.env.example frontend/.env.example
+git add DEPLOYMENT.md render.yaml backend/src/config/db.js backend/src/app.js backend/.env.example frontend/.env.example
 git commit -m "Add Render + Vercel deployment configuration"
 git push -u origin feature/platform-overhaul
 ```
@@ -45,7 +45,7 @@ git push -u origin feature/platform-overhaul
 
 1. <https://dashboard.render.com> → **New** → **Blueprint**.
 2. Connect `Exaudlaizer/Excel-connect-hub`, pick branch `feature/platform-overhaul`.
-3. Render reads `backend/render.yaml` and offers one web service plus one
+3. Render reads `render.yaml` and offers one web service plus one
    Postgres database. It will ask for the values marked `sync: false`:
    - `CLIENT_ORIGIN` — put `http://localhost:3000` for now, corrected in step 4.
    - `PUBLIC_API_ORIGIN` — leave blank for now, corrected in step 4.

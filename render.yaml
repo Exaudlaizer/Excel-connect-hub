@@ -7,6 +7,8 @@
 # normal, always-on Node process, so `server.js` deploys unchanged.
 #
 # Deploy: Render dashboard -> New -> Blueprint -> pick this repo.
+# This file must stay at the repository root: that is the only place Render's
+# Blueprint discovery looks. `rootDir: backend` below points it at the API.
 #
 # NOTE ON UPLOADS: the free plan has no persistent disk. Files survive while the
 # instance lives, but a redeploy or a spin-down wipes them. To make uploads

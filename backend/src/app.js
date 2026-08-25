@@ -49,10 +49,20 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:3000")
   .map((value) => value.trim())
   .filter(Boolean);
 
+// Vercel gives every preview deployment a fresh, unpredictable hostname, so a
+// preview frontend can never be named in CLIENT_ORIGIN ahead of time. Opt in
+// with ALLOW_VERCEL_PREVIEWS=true while testing; leave it off in production.
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS === "true";
+const VERCEL_PREVIEW = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i;
+
+function isAllowedOrigin(origin) {
+  return allowedOrigins.includes(origin) || (allowVercelPreviews && VERCEL_PREVIEW.test(origin));
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin || isAllowedOrigin(origin)) return callback(null, true);
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true
@@ -77,6 +87,12 @@ app.use(
     setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff")
   })
 );
+
+// The bare origin is what a human types when checking whether the API is up.
+// Without this it answers "Route not found", which reads like a broken deploy.
+app.get("/", (_req, res) => {
+  res.json({ service: "excel-connect-hub-api", status: "ok", health: "/health" });
+});
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "excel-connect-hub-api" });

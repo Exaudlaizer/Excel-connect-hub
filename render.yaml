@@ -30,10 +30,15 @@
 #     tight part, which NODE_OPTIONS below is there to keep in bounds.
 
 services:
+  # Region is pinned on all three. DATABASE_URL below is the database's internal
+  # connection string, which only resolves between resources in the same region;
+  # letting each default independently is a way to get a service that builds
+  # fine and then cannot reach its database.
   - type: web
     name: excel-connect-hub-api
     runtime: node
     plan: free
+    region: oregon
     rootDir: backend
     buildCommand: npm ci
     startCommand: npm start
@@ -101,6 +106,7 @@ services:
     name: excel-connect-hub-web
     runtime: node
     plan: free
+    region: oregon
     rootDir: frontend
     buildCommand: npm ci && npm run build
     startCommand: npm start
@@ -131,5 +137,6 @@ services:
 databases:
   - name: excel-connect-hub-db
     plan: free
+    region: oregon
     databaseName: excel_connect_hub
     user: excel_connect_hub

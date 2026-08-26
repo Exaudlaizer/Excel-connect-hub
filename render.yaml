@@ -14,10 +14,20 @@
 # This file must stay at the repository root: that is the only place Render's
 # Blueprint discovery looks. `rootDir: backend` below points it at the API.
 #
-# NOTE ON UPLOADS: the free plan has no persistent disk. Files survive while the
-# instance lives, but a redeploy or a spin-down wipes them. To make uploads
-# permanent, change `plan: free` to `plan: starter` and uncomment the `disk:`
-# block below (Render charges for disks; the free plan rejects them).
+# EVERYTHING HERE FITS RENDER'S FREE PLAN. What that costs you:
+#
+#   * No persistent disk, so uploaded images survive only as long as the
+#     instance does — a redeploy or a spin-down wipes them. For permanent
+#     uploads set `plan: starter` on the API and uncomment its `disk:` block.
+#     The free plan rejects a disk outright.
+#   * Both services sleep after ~15 minutes idle; the next request pays a
+#     ~50 second cold start.
+#   * Free Postgres expires 30 days after creation and holds 1 GB.
+#   * Free instances share 750 running hours a month across the account. Two
+#     sleepy services stay well inside that; two busy ones would not.
+#   * 512 MB RAM per instance. Measured: the API idles at ~76 MB and the
+#     frontend at ~70 MB, so runtime is comfortable. The Next.js *build* is the
+#     tight part, which NODE_OPTIONS below is there to keep in bounds.
 
 services:
   - type: web
@@ -98,6 +108,18 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+
+      # A free instance has 512 MB, and `next build` is the only step that goes
+      # anywhere near it. Capping V8's heap below the container limit makes the
+      # collector work harder instead of letting the kernel OOM-kill the build,
+      # which surfaces as a build that dies with no error. Verified: the full
+      # 22-route build completes inside this cap.
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=460"
+
+      # Nothing to gain from telemetry during a build, and it costs a request.
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
 
       # Compiled into the browser bundle at BUILD time, so this cannot be
       # derived from the API service at runtime and changing it later needs a

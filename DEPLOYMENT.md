@@ -115,6 +115,22 @@ API's `/health` in another tab before demoing to someone.
 instance does. For permanent uploads set `plan: starter` on the API service in
 `render.yaml` and uncomment its `disk:` block.
 
+## What the free plan gives you
+
+Everything in `render.yaml` fits the free plan — audited, not assumed.
+
+| Limit | Reality for this app |
+| --- | --- |
+| 512 MB RAM per instance | API idles at ~76 MB, frontend at ~70 MB — measured |
+| Build memory | `next build` is the tight step; `NODE_OPTIONS=--max-old-space-size=460` keeps it in bounds, verified against the full 22-route build |
+| No persistent disk | Uploads are lost on redeploy (above) |
+| Sleeps after ~15 min idle | ~50 s cold start on the next request, per service |
+| 750 instance hours/month, account-wide | Two sleepy services stay well inside it; two busy ones would not |
+| Free Postgres | 1 GB, and it **expires 30 days after creation** |
+
+Nothing in the blueprint uses a paid-only feature: no `disk`, no
+`preDeployCommand`, no scaling, and every `plan:` is `free`.
+
 ---
 
 ## Reading a failed deploy

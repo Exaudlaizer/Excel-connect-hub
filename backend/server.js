@@ -4,7 +4,7 @@
 // against the wrong database.
 require("dotenv").config();
 
-const { connectDB, sequelize } = require("./config/db");
+const { connectDB, sequelize } = require("./src/config/db");
 const { closeRateLimitStore, initRateLimitStore } = require("./src/config/rateLimit");
 const { verifyTransport } = require("./src/utils/mailer");
 
@@ -22,7 +22,7 @@ async function start() {
   await initRateLimitStore();
   await verifyTransport();
 
-  const app = require("./app");
+  const app = require("./src/app");
 
   server = app.listen(PORT, () => {
     console.log(`Excel Connect Hub API running on port ${PORT}`);

@@ -20,6 +20,18 @@ function assertEnv() {
     problems.push("DATABASE_URL must be set explicitly in production.");
   }
 
+  // The mock payment driver echoes back whatever amount it is asked to verify,
+  // so it would hand out paid plans for free. It must never be reachable once
+  // real payments are switched on.
+  if (process.env.PAYMENTS_ENABLED === "true") {
+    if (!process.env.FLW_SECRET_KEY || !process.env.FLW_PUBLIC_KEY) {
+      problems.push("PAYMENTS_ENABLED=true requires FLW_PUBLIC_KEY and FLW_SECRET_KEY (the mock driver would grant paid plans for free).");
+    }
+    if (!process.env.FLW_WEBHOOK_HASH) {
+      problems.push("PAYMENTS_ENABLED=true requires FLW_WEBHOOK_HASH so webhook calls can be authenticated.");
+    }
+  }
+
   if (problems.length) {
     throw new Error(`Invalid configuration:\n  - ${problems.join("\n  - ")}`);
   }

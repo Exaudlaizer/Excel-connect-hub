@@ -7,34 +7,42 @@ Production-ready starter platform for a Tanzanian student-business ecosystem con
 ```txt
 Excel-connect-hub/
 ├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── src/
-│   ├── .env.example
-│   ├── app.js
-│   ├── package.json
-│   └── server.js
-└── frontend/
-    ├── app/
-    ├── components/
-    ├── lib/
-    ├── .env.example
-    ├── package.json
-    ├── tailwind.config.ts
-    └── tsconfig.json
+│   ├── server.js          # process entry
+│   ├── src/               # app, config, routes, controllers, models, middleware, utils, scripts
+│   └── .env.example
+├── frontend/              # Next.js 14 (App Router, TypeScript, Tailwind)
+│   ├── app/  components/  lib/
+│   └── .env.example
+├── docs/                  # PRD, architecture, API, plan, progress, ...
+├── AGENT.md  SECURITY.md  CONTRIBUTING.md  CHANGELOG.md
+└── vercel.json            # frontend build config for Vercel
 ```
 
-The required backend folders are present at `backend/config`, `backend/models`, `backend/routes`, `backend/controllers`, and `backend/middleware`.
+All backend code lives in `backend/src/`.
+
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [docs/PRD.md](docs/PRD.md) | Product requirements, users, scope |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) / [ARCHITECTURE_DESIGN.md](docs/ARCHITECTURE_DESIGN.md) | System overview; data model, flows, decisions |
+| [docs/API.md](docs/API.md) | Endpoint reference |
+| [docs/DATABASE.md](docs/DATABASE.md) | Schema, migrations, scripts |
+| [docs/FEATURES.md](docs/FEATURES.md) | What is built vs planned |
+| [docs/PLAN.md](docs/PLAN.md) / [PROGRESS.md](docs/PROGRESS.md) | Roadmap and current status |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) / [TESTING.md](docs/TESTING.md) | Shipping and test strategy |
+| [SECURITY.md](SECURITY.md) | Security posture and known gaps |
+| [AGENT.md](AGENT.md) / [CONTRIBUTING.md](CONTRIBUTING.md) | Guide for AI agents and contributors |
 
 ## Features
 
 - JWT authentication with register, login, and role selection.
 - Role-based access for `student`, `company`, `mentor`, and `admin`. Admin accounts
   cannot be self-registered; they are provisioned with `npm run seed:admin`.
-- Student profile and CV URL management.
+- Student, company and mentor profiles; CV URL management; image uploads.
+- Community discussions and an admin-curated campus services directory.
+- Subscription plans with Flutterwave billing (built, switched off until `PAYMENTS_ENABLED=true`).
+- Email OTP verification (not yet enforced server-side; see SECURITY.md).
 - Company opportunity posting and applicant review APIs.
 - Job and internship listings with student applications.
 - Marketplace advertisements by category.
@@ -73,7 +81,14 @@ JWT_EXPIRES_IN=7d
 CLIENT_ORIGIN=http://localhost:3000
 ```
 
-In development, Sequelize runs `sync({ alter: true })` when the API starts. For production, use explicit migrations before deployment.
+Create the schema with the idempotent migration, then seed plans:
+
+```bash
+npm run db:migrate
+npm run seed:plans
+```
+
+`DB_SYNC_ALTER=true` makes Sequelize run `sync({ alter: true })` at boot. Use it for local schema experiments only.
 
 ### Create the first admin
 
@@ -107,33 +122,7 @@ Open `http://localhost:3000`.
 
 ## REST API
 
-Base URL: `http://localhost:5000/api`
-
-- `POST /auth/register` (roles: `student`, `company`, `mentor`)
-- `POST /auth/login`
-- `POST /auth/forgot-password`
-- `POST /auth/reset-password`
-- `GET /auth/me`
-- `GET /users` (supports `?role=`, `?status=`, `?q=`)
-- `PATCH /users/me`
-- `PATCH /users/:id/status`
-- `GET /jobs`
-- `GET /jobs/mine`
-- `POST /jobs`
-- `PATCH /jobs/:id`
-- `PATCH /jobs/:id/approval`
-- `POST /applications`
-- `GET /applications/mine`
-- `GET /applications/applicants`
-- `PATCH /applications/:id/status`
-- `GET /ads`
-- `POST /ads`
-- `PATCH /ads/:id/approval`
-- `GET /courses`
-- `POST /courses`
-- `POST /courses/:id/enroll`
-- `PATCH /courses/:id/approval`
-- `GET /admin/analytics`
+Base URL: `http://localhost:5000/api`. The full endpoint list (about 56 routes across auth, users, jobs, applications, ads, courses, community, services, uploads, billing, admin) is in [docs/API.md](docs/API.md).
 
 Protected routes require:
 

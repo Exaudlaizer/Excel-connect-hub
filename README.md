@@ -42,7 +42,7 @@ All backend code lives in `backend/src/`.
 - Student, company and mentor profiles; CV URL management; image uploads.
 - Community discussions and an admin-curated campus services directory.
 - Subscription plans with Flutterwave billing (built, switched off until `PAYMENTS_ENABLED=true`).
-- Email OTP verification (not yet enforced server-side; see SECURITY.md).
+- Email OTP verification; a verified email is required to publish content.
 - Company opportunity posting and applicant review APIs.
 - Job and internship listings with student applications.
 - Marketplace advertisements by category.

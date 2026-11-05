@@ -97,8 +97,8 @@ app.use(
 // Also per-IP, and the audience is students on shared campus wifi — twenty an
 // hour would have meant twenty signups per hour for a whole university. What
 // actually keeps junk accounts out is the unique-email constraint and the fact
-// that an unverified account cannot do anything until a code sent to a real
-// inbox is entered.
+// that an unverified account cannot publish anything (see requireVerified)
+// until a code sent to a real inbox is entered.
 app.use(
   "/api/auth/register",
   makeLimiter({

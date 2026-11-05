@@ -8,7 +8,7 @@ Status key: ✅ built · 🟡 partial · ⬜ planned. Based on the code as of 20
 |---|:-:|---|
 | Register as student / company / mentor | ✅ | `admin` cannot self-register |
 | Login / "remember me" | ✅ | JWT in localStorage or sessionStorage |
-| Email verification (6-digit code) | 🟡 | Codes work; **not enforced server-side** (SECURITY S-1) |
+| Email verification (6-digit code) | ✅ | Required to publish; browsing, applying and enrolling stay open |
 | Phone verification | 🟡 | Code flow exists; delivery channel is email-based code today. Confirm SMS plans |
 | Forgot / reset password | ✅ | Single-use hashed token, 60 min |
 | Profile editing (student, company, mentor) | ✅ | Role-specific JSONB profiles; CV URL |

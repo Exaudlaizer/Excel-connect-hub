@@ -14,7 +14,7 @@ Living status report. Update at the end of each work session.
 | Tests | 🔴 | None |
 | CI/CD | 🔴 | None |
 | Documentation | 🟢 | This doc set |
-| Security | 🟡 | One High open (S-1); see SECURITY.md |
+| Security | 🟡 | No High findings open; see SECURITY.md |
 | Deployment | 🟡 | Config for Vercel frontend; API host undecided |
 
 ## Completed this session (2026-11-05)
@@ -24,6 +24,8 @@ Living status report. Update at the end of each work session.
 - **Removed** 33 one-line re-export shims under `backend/{controllers,models,routes,middleware,config,app.js}`; `server.js` now requires `src/` directly. Verified the app loads and registers all 56 routes. *Not tested against a live database.*
 - **Security:** blocked the "payments enabled with mock driver" hole in `config/env.js` (tested three configurations); upgraded nodemailer 9 to 10.3.1; ran `npm audit fix` (backend 9 to 4 advisories); patched Next 14.2.23 to 14.2.35 and confirmed `next build`.
 - Corrected my earlier mistake: the root-level backend folders were thin shims, not duplicated logic.
+
+- **Email-verification gate (S-1):** `requireVerified` on 9 publish routes. Middleware unit-checked (unverified 403, verified and admin pass) and route wiring confirmed; *not exercised against a live database or UI*.
 
 ## Not verified
 
@@ -36,7 +38,6 @@ Living status report. Update at the end of each work session.
 
 | ID | Issue | Severity |
 |---|---|---|
-| S-1 | Email verification not enforced server-side | High |
 | S-9 | Remaining dependency advisories (backend 4 moderate; frontend 3 high + 1 critical, need Next 15/16) | Medium to High |
 | S-2/S-3 | Token in localStorage; no frontend CSP | Medium |
 | - | Free-plan ad limit not confirmed enforced | Low |
@@ -45,10 +46,9 @@ Living status report. Update at the end of each work session.
 
 ## Next up
 
-1. Server-side verification gate (S-1)
-2. CI pipeline with build + audit
-3. Backend test suite for auth/authorization/billing
-4. Decide and set up the API host and database
+1. CI pipeline with build + audit
+2. Backend test suite for auth/authorization/billing (include the `requireVerified` gate)
+3. Decide and set up the API host and database
 
 ## Changelog of this file
 

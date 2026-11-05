@@ -55,7 +55,7 @@ Priority: **P0** = must for launch, **P1** = soon after, **P2** = later.
 - P0 Email verification by 6-digit code; optional phone verification.
 - P0 Password reset by emailed single-use link.
 - P0 Suspend/reactivate accounts (admin).
-- **P0 Enforce email verification on the server** before an account can publish content. *Not enforced today; see SECURITY.md S-1.*
+- P0 Email verification is required to **publish** (jobs, ads, courses, community posts, uploads). Unverified users can still browse, apply and enrol. *Enforced server-side since 2026-11-05.*
 
 ### 5.2 Opportunities
 - P0 Companies create jobs/internships (title, type, location, work mode, description, requirements, salary range, deadline).
@@ -125,7 +125,7 @@ Activation (verified accounts / signups), applications per live job, enrolments 
 ## 10. Open questions
 
 1. Is "business/SME" a separate role from "company"?
-2. Should email verification gate *login* or only *publishing*?
+2. ~~Should email verification gate login or only publishing?~~ Decided: publishing only.
 3. Mobile money providers required at launch?
 4. Who staffs moderation, and what is the target approval SLA?
 5. Is Swahili required for launch?

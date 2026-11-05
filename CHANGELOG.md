@@ -5,6 +5,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 ## [Unreleased]
 
 ### Added
+- `requireVerified` middleware: unverified users can no longer publish jobs, ads, courses, community posts/replies or uploads (403 `EMAIL_NOT_VERIFIED`); admins exempt (SECURITY S-1).
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
@@ -18,7 +19,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - 33 one-line re-export shim files under `backend/controllers`, `models`, `routes`, `middleware`, `config` and `backend/app.js` (they only forwarded to `backend/src/*`).
 
 ### Known issues
-- Email verification is not enforced server-side (SECURITY.md S-1).
 - Remaining dependency advisories need a Next.js 15/16 upgrade (frontend) or have no non-breaking fix (backend `moment`/`uuid` via Sequelize).
 
 ## 2026-11 and earlier

@@ -9,7 +9,7 @@ const {
   listPosts,
   pinPost
 } = require("../controllers/communityController");
-const { authorize, optionalProtect, protect } = require("../middleware/authMiddleware");
+const { authorize, optionalProtect, protect, requireVerified } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
 const router = express.Router();
@@ -22,6 +22,7 @@ router.get("/:id", optionalProtect, getPost);
 router.post(
   "/",
   protect,
+  requireVerified,
   [
     body("title").trim().isLength({ min: 4, max: 180 }).withMessage("Give your post a title of at least 4 characters"),
     body("body").trim().isLength({ min: 10 }).withMessage("Write at least 10 characters"),
@@ -34,6 +35,7 @@ router.post(
 router.post(
   "/:id/replies",
   protect,
+  requireVerified,
   [body("body").trim().isLength({ min: 2 }).withMessage("Write a reply first")],
   validate,
   createReply

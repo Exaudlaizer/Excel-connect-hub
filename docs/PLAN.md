@@ -10,7 +10,7 @@ Goal: make what exists safe to run in front of real users.
 - [x] Fix invalid `vercel.json`
 - [x] Boot guard: payments cannot be enabled with the mock driver
 - [x] Patch dependency advisories that don't require breaking changes
-- [ ] **Enforce email verification server-side** (SECURITY S-1)
+- [x] Enforce email verification server-side for publishing (SECURITY S-1); tests still to write
 - [ ] Confirm the free-plan one-ad limit is actually enforced
 - [ ] Add DB `ssl` option; production env checklist run-through
 - [ ] Set up CI: install, `next build`, `npm audit`, backend boot smoke test

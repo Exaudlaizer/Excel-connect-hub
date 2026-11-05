@@ -48,7 +48,7 @@ Authoritative schema: `backend/src/models/*` and `backend/src/scripts/migrate.js
 1. `POST /auth/register` (rate limit 100/h/IP): validates, rejects `admin`, hashes password, creates `User` and a `free` `Subscription`, issues JWT, sends an email code.
 2. User enters the 6-digit code: `POST /auth/verification/confirm` (or the `-public` variant when not signed in).
 3. Code rules: 60 s resend cooldown, one live code per purpose, burned after 5 wrong guesses.
-4. **Gap:** nothing server-side checks `emailVerified` afterwards (SECURITY.md S-1).
+4. `requireVerified` then blocks unverified users from publishing (jobs, ads, courses, posts, uploads); browsing, applying and enrolling are unaffected. Admins are exempt.
 
 ### 3.2 Login
 `POST /auth/login` (10 failed attempts/15 min/IP; successes not counted) compares bcrypt, rejects suspended accounts, returns JWT. The frontend stores it in `localStorage` ("remember me") or `sessionStorage`.

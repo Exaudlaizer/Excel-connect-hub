@@ -14,6 +14,7 @@ Please do **not** open a public issue. Email the maintainer (add a monitored add
 | Passwords | bcrypt, cost 12; min 8 chars | `models/User.js`, `routes/authRoutes.js` |
 | Sessions | JWT signed with `JWT_SECRET`; boot fails if the secret is missing, a known placeholder, or under 32 chars in production | `config/env.js` |
 | Authorisation | `protect` (valid token, active user), `authorize(...roles)`; suspended users get 401/403 | `middleware/authMiddleware.js` |
+| Publishing gate | Unverified emails cannot publish jobs, ads, courses, posts or uploads | `middleware/authMiddleware.js` (`requireVerified`) |
 | Admin creation | `admin` role cannot be self-registered; CLI only | `authController.js`, `scripts/createAdmin.js` |
 | Brute force | Login 10 failed/15 min/IP; reset 5-10/h; OTP: 60 s cooldown, 5 guesses | `app.js`, `otpController.js` |
 | Reset tokens | Random, stored only as SHA-256, single use, 60 min expiry | `passwordResetController.js` |
@@ -31,7 +32,7 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 
 | ID | Severity | Status | Finding | Recommended fix |
 |---|---|---|---|---|
-| S-1 | **High** | Open | **Email verification is not enforced on the server.** `protect` and the controllers never check `emailVerified`; only a dashboard banner nudges users. A comment in `app.js` claims unverified accounts "cannot do anything", which is currently untrue. Spam accounts can post jobs/ads/community content (subject to admin approval for jobs/ads/courses). | Add a `requireVerified` middleware on all write routes (post, apply, enrol, upload, checkout). Fix or remove the misleading comment. |
+| S-1 | ~~High~~ | **Fixed 2026-11-05** | **Email verification was not enforced server-side.** | New `requireVerified` middleware (403 `EMAIL_NOT_VERIFIED`) on publish routes: create/edit jobs, ads and courses, community posts and replies, uploads. Browsing, applying and enrolling stay open to unverified users; admins are exempt. Still to add: automated tests (PLAN.md Phase 1). |
 | S-2 | Medium | Open | **Token in `localStorage`.** Any XSS can exfiltrate the JWT. There is no server-side revocation, and the default lifetime is 7 days. | Shorter access token plus httpOnly refresh cookie; add a token version on `User` to allow revocation on password change/suspension. Add a strict CSP on the Next.js app. |
 | S-3 | Medium | Open | **No CSP / security headers on the frontend.** `next.config.mjs` sets none (Helmet only covers the API). | Add `headers()` with CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS. |
 | S-4 | Medium | Open | **Rate limits are per-IP only** for login. Distributed or campus-NAT attacks are weakly constrained, and shared NAT can lock out legitimate users. | Add per-account lockout/backoff on repeated failed logins. |
@@ -45,7 +46,7 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 
 ## Hardening checklist before launch
 
-- [ ] Fix S-1 (server-side verification gate)
+- [x] Fix S-1 (server-side verification gate for publishing)
 - [ ] Set a random `JWT_SECRET` of 48+ bytes; never reuse across environments
 - [ ] `NODE_ENV=production`, `TRUST_PROXY` set correctly for the host
 - [ ] `CLIENT_ORIGIN` set to the exact production origin(s)

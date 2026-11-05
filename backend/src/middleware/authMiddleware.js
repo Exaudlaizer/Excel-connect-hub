@@ -60,4 +60,18 @@ function authorize(...roles) {
   };
 }
 
-module.exports = { protect, optionalProtect, authorize };
+// Publishing (jobs, ads, courses, community posts, uploads) requires a
+// confirmed email address, so a throwaway sign-up cannot put content in front of
+// other users. Browsing, applying and enrolling stay open to unverified
+// accounts. Admins are provisioned from the command line and are exempt.
+// Must run after `protect`.
+function requireVerified(req, res, next) {
+  if (req.user && (req.user.role === "admin" || req.user.emailVerified)) return next();
+
+  res.status(403).json({
+    code: "EMAIL_NOT_VERIFIED",
+    message: "Confirm your email address before publishing. You can do this from Settings."
+  });
+}
+
+module.exports = { protect, optionalProtect, authorize, requireVerified };

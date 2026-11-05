@@ -115,6 +115,10 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 |---|---|---|
 | GET `/analytics` | admin | Platform counts and queues |
 
+## Email-verification gate
+
+These routes additionally require a verified email (admins exempt) and otherwise return `403` with `{ "code": "EMAIL_NOT_VERIFIED", "message": … }`: POST/PATCH `/jobs`, POST/PATCH `/ads`, POST/PATCH `/courses`, POST `/community` and `/community/:id/replies`, POST `/uploads`.
+
 ## Status codes
 
 `200/201` success · `400/422` validation · `401` missing/invalid token or suspended · `403` wrong role · `404` not found · `409` conflict (e.g. email exists, duplicate application) · `429` rate limited · `500` server error.

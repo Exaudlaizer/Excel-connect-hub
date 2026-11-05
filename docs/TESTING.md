@@ -10,8 +10,8 @@ TEST_DATABASE_URL=postgres://… npm test    # plus integration tests against a 
 
 Tests use Node's built-in runner (`node --test`) and Supertest; files live in `backend/tests/`. CI (`.github/workflows/ci.yml`) runs migrations twice on an empty Postgres, the test suite, `npm audit` (fails on high/critical for the backend), and for the frontend `tsc`, lint and build.
 
-**Covered so far:** env/payment guards, mock gateway disabled in production, plan entitlements, `requireVerified`, ad creation gate and Free-plan limit, registration (atomic, no admin, duplicates), login and suspended accounts.
-**Still to do:** the full authorization matrix, OTP and password-reset flows, moderation visibility, applications, billing verify/webhook, uploads, pagination.
+**Covered so far (48 tests):** env/payment guards, provider registry and driver interface, mock gateway disabled in production, plan entitlements, `requireVerified`, ad creation gate and Free-plan limit, registration (atomic, no admin, duplicates), login and suspended accounts, and billing end to end with the mock gateway: checkout refused while disabled, upgrade only after verify, replay is idempotent, amount and currency tampering refused, unknown reference, audience rules, provider-that-created-it verification, and webhook signature handling (bad, missing, unknown reference, misconfigured).
+**Still to do:** the full authorization matrix, OTP and password-reset flows, moderation visibility, applications, uploads, pagination, and the real Selcom/ClickPesa drivers against their sandboxes.
 
 ## Priorities (highest risk first)
 

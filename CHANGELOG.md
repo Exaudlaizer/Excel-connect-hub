@@ -14,6 +14,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Changed (payments)
+- Payment gateways are now pluggable drivers (`backend/src/payments`: registry, `mock`, `flutterwave`) selected by `PAYMENT_PROVIDER`; the Flutterwave code moved there unchanged in behaviour. Reason: Flutterwave merchant accounts are not available to this project in Tanzania; Selcom and ClickPesa are the planned drivers.
+- A payment is verified by the provider that created it; `Payment`/`Subscription` rows record the real provider (the mock used to be recorded as `flutterwave`). The `provider` enum gains `mock`, `selcom`, `clickpesa` (migration verified on fresh and legacy-shaped databases).
+- The boot check generalises to "the chosen provider has all its credentials"; the webhook returns 503 (not a fake 200) when the provider is misconfigured.
+- 23 new tests (billing flow, amount/currency tampering, replay, audience, webhook signatures, registry); a mutation check confirmed the amount-tamper test fails when the check is removed.
+
 ### Fixed
 - `npm run db:migrate` failed on an empty database (`relation "users" does not exist`) despite documenting itself as the fresh-setup path; it now creates missing tables first and seeds missing plans.
 - Registration could leave a user without a subscription when plans were not seeded; it is now a single transaction.

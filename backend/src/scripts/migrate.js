@@ -335,6 +335,28 @@ indexes.forEach(([name, target]) => {
 });
 
 /* ---------------------------------------------------------------------------
+   Payment providers
+   ---------------------------------------------------------------------------
+   The provider column started as ('none', 'manual', 'flutterwave'). Gateways are
+   now pluggable (src/payments), so existing databases need the new values.
+   ADD VALUE IF NOT EXISTS is idempotent and keeps every existing row.
+   ------------------------------------------------------------------------- */
+["enum_payments_provider", "enum_subscriptions_provider"].forEach((type) => {
+  ["mock", "selcom", "clickpesa"].forEach((value) => {
+    // Older databases built from the raw SQL below share one enum between both
+    // tables, so a given type may not exist; only alter the ones that do.
+    step(
+      `${type}: add '${value}'`,
+      `DO $$ BEGIN
+         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = '${type}') THEN
+           ALTER TYPE ${type} ADD VALUE IF NOT EXISTS '${value}';
+         END IF;
+       END $$;`
+    );
+  });
+});
+
+/* ---------------------------------------------------------------------------
    Row-level security (Supabase)
    ---------------------------------------------------------------------------
    Supabase serves every table in the public schema through its REST Data API

@@ -18,7 +18,7 @@ A concise map of how Excel Connect Hub is put together. For the reasoning, data 
                                     └──┬─────┬─────┬─────┘
                        Sequelize ORM   │     │     │
                                        ▼     ▼     ▼
-                              PostgreSQL   Redis   SMTP        Flutterwave
+                              PostgreSQL   Redis   SMTP        Payment gateway
                               (data)    (rate-limit (email)    (payments)
                                          counters,
                                          optional)
@@ -42,7 +42,8 @@ Excel-connect-hub/
 │       ├── controllers/   Request handlers / business logic
 │       ├── models/        Sequelize models + associations (index.js)
 │       ├── middleware/    auth (protect/optionalProtect/authorize), validate, errors
-│       ├── utils/         flutterwave, mailer, pagination, tokens
+│       ├── payments/      provider registry + drivers (mock, flutterwave)
+│       ├── utils/         mailer, pagination, tokens, entitlements
 │       └── scripts/       createAdmin, migrate, seedPlans, resetDatabase, pruneUploads
 ├── docs/                  Product and engineering documents
 └── vercel.json            Frontend build config for Vercel
@@ -57,7 +58,7 @@ Excel-connect-hub/
 | Database | System of record | PostgreSQL via Sequelize 6 |
 | Rate-limit store | Shared counters across API instances | Redis (optional; falls back to in-process) |
 | Mailer | Verification codes, password resets | Nodemailer (console fallback when SMTP unset) |
-| Payments | Subscription checkout | Flutterwave (mock driver when keys unset) |
+| Payments | Subscription checkout | Pluggable gateway drivers; Selcom or ClickPesa planned; mock for development |
 | File storage | Uploaded images | Local disk `backend/uploads/` served at `/uploads` |
 
 ## 4. Request lifecycle

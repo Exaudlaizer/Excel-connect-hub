@@ -9,8 +9,8 @@
  * Everything is free today. `paymentsEnabled()` gates the checkout flow: while
  * it returns false, the plans are visible and the Free plan is fully active, but
  * any attempt to actually pay is turned away with "coming soon" rather than
- * reaching the gateway. Flip PAYMENTS_ENABLED=true (with Flutterwave keys set)
- * to switch it on.
+ * reaching the gateway. Flip PAYMENTS_ENABLED=true (with a real PAYMENT_PROVIDER
+ * and its credentials) to switch it on.
  */
 
 // Prices are in minor units. TZS has no minor unit in circulation, so these are
@@ -87,11 +87,4 @@ function paymentsEnabled() {
   return process.env.PAYMENTS_ENABLED === "true";
 }
 
-// The gateway is only usable when the flag is on AND the keys are present, so a
-// half-configured environment cannot accidentally send a user to a broken
-// checkout.
-function flutterwaveConfigured() {
-  return Boolean(process.env.FLW_SECRET_KEY && process.env.FLW_PUBLIC_KEY);
-}
-
-module.exports = { PLANS, paymentsEnabled, flutterwaveConfigured };
+module.exports = { PLANS, paymentsEnabled };

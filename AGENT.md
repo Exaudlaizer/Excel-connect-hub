@@ -56,7 +56,7 @@ cd backend && JWT_SECRET=$(openssl rand -hex 32) node -e 'require("./src/app"); 
 
 1. Never allow `admin` through self-service registration.
 2. Never trust client-supplied role, status, price, or plan; derive on the server.
-3. Never enable the mock payment driver in production. `PAYMENTS_ENABLED=true` requires all Flutterwave variables (enforced in `config/env.js`).
+3. Never enable the mock payment driver in production. `PAYMENTS_ENABLED=true` requires a real `PAYMENT_PROVIDER` and all of its credentials (enforced in `config/env.js`). A new gateway is a new driver in `backend/src/payments/` implementing the interface documented in `payments/index.js`; verify must ask the gateway for the amount and currency it recorded.
 4. Never accept SVG or non-image uploads; never use client filenames or extensions.
 5. Never log tokens, passwords, OTP codes (outside the dev console mailer), or reset links in production.
 6. Never commit `.env` files or real secrets.

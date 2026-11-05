@@ -52,7 +52,7 @@ Goal: make what exists safe to run in front of real users.
 
 ## Phase 4: Monetise (month 3-4)
 
-- [ ] Flip `PAYMENTS_ENABLED` in staging with Flutterwave test keys
+- [ ] Write the Selcom or ClickPesa driver from its official docs, then flip `PAYMENTS_ENABLED` in staging with sandbox credentials
 - [ ] Mobile-money checkout testing (M-Pesa, Tigo Pesa, Airtel Money)
 - [ ] Implement paid-plan benefits that are only copy today: featured placement, priority review, analytics
 - [ ] Renewals, receipts, failed-payment handling
@@ -65,7 +65,7 @@ Goal: make what exists safe to run in front of real users.
 | No tests | Regressions during every phase | Phase 1 before new features |
 | Single-person moderation | Approval queue becomes the bottleneck | Define SLA; add moderator role later |
 | Next.js major upgrade | Possible breaking changes | Do it in its own branch after tests exist |
-| Payments regulation/KYC | Delays monetisation | Start Flutterwave onboarding in Phase 2 |
+| Business registration and gateway KYC | Delays monetisation; free launch is the base case | Finish BRELA/TIN/licence and apply to Selcom and ClickPesa now |
 
 ## Definition of done (all work)
 

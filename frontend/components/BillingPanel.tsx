@@ -202,7 +202,7 @@ export function BillingPanel() {
       )}
 
       <p className="mt-6 text-xs leading-5 text-muted">
-        Payments are processed securely by Flutterwave, including mobile money (M-Pesa, Tigo Pesa, Airtel) and cards.
+        Payments are processed securely by our payment partner, including mobile money (M-Pesa, Tigo Pesa, Airtel Money) and cards.
         Excel Connect Hub never sees your card or mobile-money credentials.
       </p>
     </section>

@@ -64,7 +64,7 @@ Student `POST /applications` → unique (jobId, studentId) → company reviews v
 
 ### 3.6 Subscription checkout (when enabled)
 1. `POST /billing/checkout` (20/15 min/IP): refused with "coming soon" unless `PAYMENTS_ENABLED=true` and keys are set. Creates a pending `Payment` (unique `txRef`) and returns the gateway URL.
-2. User pays at Flutterwave and returns to `/billing/return`.
+2. User pays at the gateway and returns to `/billing/return`.
 3. `POST /billing/confirm` **verifies server-to-server** and only upgrades if amount **and** currency match the pending payment. The webhook (`verif-hash` header, timing-safe compare) takes the same verified path. Already-successful payments are idempotent.
 
 ### 3.7 Uploads
@@ -91,7 +91,7 @@ Student `POST /applications` → unique (jobId, studentId) → company reviews v
 | D3 | JWT bearer tokens | Simple, SPA-friendly | No revocation; XSS can steal a `localStorage` token |
 | D4 | Role profiles as JSONB | Fast iteration | Weaker constraints; hard to query/index deeply |
 | D5 | Plans in code, mirrored to DB | Reviewable, but editable at runtime | Two sources of truth to keep aligned |
-| D6 | Mock payment driver when no keys | Whole flow testable offline | Must never run with `PAYMENTS_ENABLED=true` and no keys (guarded by `flutterwaveConfigured()`; see SECURITY.md S-6) |
+| D6 | Payment gateways are drivers behind one interface (`backend/src/payments`); a mock driver exists for development | Gateway can change (Flutterwave is unavailable in Tanzania; Selcom/ClickPesa planned) without touching billing logic; whole flow testable offline | The mock must never run with real payments on: refused at boot and again at selection in production. A payment is always verified by the provider that created it |
 | D7 | Local-disk uploads | Zero infrastructure at start | Not horizontally scalable; migrate to object storage |
 | D8 | Backend source consolidated under `backend/src/` | Single source of truth | Removed the earlier one-line re-export shims at `backend/{controllers,models,routes,middleware,config}` |
 

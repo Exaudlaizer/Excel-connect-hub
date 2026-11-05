@@ -70,7 +70,8 @@ Status key: ✅ built · 🟡 partial · ⬜ planned. Based on the code as of 20
 |---|:-:|
 | Plan catalogue (Free, Business Pro, Employer Pro, Mentor Pro) | ✅ |
 | Free subscription auto-created at signup | ✅ |
-| Flutterwave checkout, verify, webhook | ✅ built, **disabled** until `PAYMENTS_ENABLED=true` |
+| Pluggable gateway layer (`payments/`): checkout, verify, webhook; drivers: mock, flutterwave | ✅ built and tested, **disabled** until `PAYMENTS_ENABLED=true` |
+| Selcom / ClickPesa drivers | ⬜ planned, pending business registration and gateway approval; to be written from the gateway's official docs |
 | Mock gateway for development | ✅ (boot now refuses mock + payments enabled) |
 | Cancel at period end | ✅ endpoint exists |
 | Renewals / dunning / invoices | ⬜ |

@@ -2,6 +2,8 @@
 // a generic 401 on every authenticated request (jwt.verify throws and the auth
 // middleware swallows it), which is a miserable thing to debug.
 
+const { DRIVERS, knownProviders, missingEnv, providerName } = require("../payments");
+
 const WEAK_SECRETS = ["replace-with-a-long-random-secret", "secret", "changeme"];
 
 function assertEnv() {
@@ -20,15 +22,21 @@ function assertEnv() {
     problems.push("DATABASE_URL must be set explicitly in production.");
   }
 
-  // The mock payment driver echoes back whatever amount it is asked to verify,
-  // so it would hand out paid plans for free. It must never be reachable once
-  // real payments are switched on.
-  if (process.env.PAYMENTS_ENABLED === "true") {
-    if (!process.env.FLW_SECRET_KEY || !process.env.FLW_PUBLIC_KEY) {
-      problems.push("PAYMENTS_ENABLED=true requires FLW_PUBLIC_KEY and FLW_SECRET_KEY (the mock driver would grant paid plans for free).");
-    }
-    if (!process.env.FLW_WEBHOOK_HASH) {
-      problems.push("PAYMENTS_ENABLED=true requires FLW_WEBHOOK_HASH so webhook calls can be authenticated.");
+  // A typo in PAYMENT_PROVIDER must not silently fall back to anything.
+  const provider = providerName();
+  if (!DRIVERS[provider]) {
+    problems.push(`PAYMENT_PROVIDER "${provider}" is not recognised. Available: ${knownProviders().join(", ")}.`);
+  } else if (process.env.PAYMENTS_ENABLED === "true") {
+    // The mock driver approves whatever amount it is asked about, so it would
+    // hand out paid plans for free. It must never be reachable once real
+    // payments are switched on.
+    if (provider === "mock") {
+      problems.push("PAYMENTS_ENABLED=true requires PAYMENT_PROVIDER to be a real gateway (the mock would grant paid plans for free).");
+    } else {
+      const missing = missingEnv(DRIVERS[provider]);
+      if (missing.length) {
+        problems.push(`PAYMENTS_ENABLED=true with PAYMENT_PROVIDER=${provider} requires: ${missing.join(", ")}.`);
+      }
     }
   }
 

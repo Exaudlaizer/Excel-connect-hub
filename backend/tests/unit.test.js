@@ -24,33 +24,103 @@ function withEnv(vars, fn) {
 }
 
 describe("assertEnv", () => {
-  const good = { JWT_SECRET: "x".repeat(40), PAYMENTS_ENABLED: undefined, FLW_PUBLIC_KEY: undefined, FLW_SECRET_KEY: undefined, FLW_WEBHOOK_HASH: undefined };
+  const clean = {
+    JWT_SECRET: "x".repeat(40),
+    PAYMENTS_ENABLED: undefined,
+    PAYMENT_PROVIDER: undefined,
+    FLW_PUBLIC_KEY: undefined,
+    FLW_SECRET_KEY: undefined,
+    FLW_WEBHOOK_HASH: undefined
+  };
 
   test("accepts a safe free-launch configuration", () => {
-    withEnv(good, () => assert.doesNotThrow(assertEnv));
+    withEnv(clean, () => assert.doesNotThrow(assertEnv));
   });
 
   test("rejects a missing or placeholder JWT secret", () => {
-    withEnv({ ...good, JWT_SECRET: undefined }, () => assert.throws(assertEnv, /JWT_SECRET is not set/));
-    withEnv({ ...good, JWT_SECRET: "changeme" }, () => assert.throws(assertEnv, /placeholder/));
+    withEnv({ ...clean, JWT_SECRET: undefined }, () => assert.throws(assertEnv, /JWT_SECRET is not set/));
+    withEnv({ ...clean, JWT_SECRET: "changeme" }, () => assert.throws(assertEnv, /placeholder/));
   });
 
-  test("refuses payments enabled without gateway keys or webhook hash", () => {
-    withEnv({ ...good, PAYMENTS_ENABLED: "true" }, () => assert.throws(assertEnv, /FLW_PUBLIC_KEY and FLW_SECRET_KEY/));
-    withEnv({ ...good, PAYMENTS_ENABLED: "true", FLW_PUBLIC_KEY: "a", FLW_SECRET_KEY: "b" }, () => assert.throws(assertEnv, /FLW_WEBHOOK_HASH/));
+  test("rejects an unrecognised PAYMENT_PROVIDER even while payments are off", () => {
+    withEnv({ ...clean, PAYMENT_PROVIDER: "selcomm" }, () => assert.throws(assertEnv, /not recognised/));
   });
 
-  test("accepts payments enabled when fully configured", () => {
-    withEnv({ ...good, PAYMENTS_ENABLED: "true", FLW_PUBLIC_KEY: "a", FLW_SECRET_KEY: "b", FLW_WEBHOOK_HASH: "c" }, () => assert.doesNotThrow(assertEnv));
+  test("refuses payments enabled with the mock gateway", () => {
+    withEnv({ ...clean, PAYMENTS_ENABLED: "true" }, () => assert.throws(assertEnv, /requires PAYMENT_PROVIDER to be a real gateway/));
+    withEnv({ ...clean, PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "mock" }, () => assert.throws(assertEnv, /real gateway/));
+  });
+
+  test("refuses payments enabled when the chosen gateway is missing credentials", () => {
+    withEnv({ ...clean, PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "flutterwave" }, () =>
+      assert.throws(assertEnv, /FLW_PUBLIC_KEY, FLW_SECRET_KEY, FLW_WEBHOOK_HASH/)
+    );
+    withEnv({ ...clean, PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "flutterwave", FLW_PUBLIC_KEY: "a", FLW_SECRET_KEY: "b" }, () =>
+      assert.throws(assertEnv, /FLW_WEBHOOK_HASH/)
+    );
+  });
+
+  test("accepts payments enabled when the gateway is fully configured", () => {
+    withEnv({ ...clean, PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "flutterwave", FLW_PUBLIC_KEY: "a", FLW_SECRET_KEY: "b", FLW_WEBHOOK_HASH: "c" }, () =>
+      assert.doesNotThrow(assertEnv)
+    );
   });
 });
 
-describe("mock payment gateway", () => {
-  test("is unavailable in production", async () => {
-    const { createPayment } = require("../src/utils/flutterwave");
-    await withEnv({ NODE_ENV: "production", FLW_PUBLIC_KEY: undefined, FLW_SECRET_KEY: undefined }, async () => {
-      await assert.rejects(() => createPayment({ txRef: "t", amountMinor: 1, currency: "TZS", redirectUrl: "http://x", customer: {} }), /mock gateway is disabled/);
+describe("payment provider registry", () => {
+  const { getProvider, getProviderByName, knownProviders, newTxRef } = require("../src/payments");
+
+  test("defaults to the mock gateway outside production", () => {
+    withEnv({ NODE_ENV: "test", PAYMENT_PROVIDER: undefined }, () => assert.equal(getProvider().name, "mock"));
+  });
+
+  test("the mock gateway is unavailable in production", () => {
+    withEnv({ NODE_ENV: "production", PAYMENT_PROVIDER: undefined }, () => assert.throws(getProvider, /disabled in production/));
+    withEnv({ NODE_ENV: "production" }, () => assert.throws(() => getProviderByName("mock"), /disabled in production/));
+  });
+
+  test("a real gateway cannot be used without its credentials", () => {
+    withEnv({ PAYMENT_PROVIDER: "flutterwave", FLW_PUBLIC_KEY: undefined, FLW_SECRET_KEY: undefined, FLW_WEBHOOK_HASH: undefined }, () =>
+      assert.throws(getProvider, /missing configuration/)
+    );
+  });
+
+  test("an unknown provider name is an error, not a silent fallback", () => {
+    assert.throws(() => getProviderByName("nope"), /Unknown payment provider/);
+  });
+
+  test("every registered driver implements the full interface", () => {
+    for (const name of knownProviders()) {
+      const driver = require("../src/payments").DRIVERS[name];
+      assert.equal(driver.name, name);
+      assert.ok(Array.isArray(driver.requiredEnv));
+      for (const fn of ["createPayment", "verifyPayment", "verifyWebhook", "parseWebhook"]) {
+        assert.equal(typeof driver[fn], "function", `${name}.${fn}`);
+      }
+    }
+  });
+
+  test("references are unique", () => {
+    assert.notEqual(newTxRef(), newTxRef());
+    assert.match(newTxRef(), /^ech-\d+-[0-9a-f]{12}$/);
+  });
+});
+
+describe("flutterwave webhook signature", () => {
+  const driver = require("../src/payments/flutterwave");
+  const req = (hash) => ({ headers: hash === undefined ? {} : { "verif-hash": hash } });
+
+  test("accepts only the configured hash", () => {
+    withEnv({ FLW_WEBHOOK_HASH: "s3cret-hash" }, () => {
+      assert.equal(driver.verifyWebhook(req("s3cret-hash")), true);
+      assert.equal(driver.verifyWebhook(req("wrong-hash!")), false);
+      assert.equal(driver.verifyWebhook(req("short")), false);
+      assert.equal(driver.verifyWebhook(req(undefined)), false);
     });
+  });
+
+  test("rejects everything when no hash is configured", () => {
+    withEnv({ FLW_WEBHOOK_HASH: undefined }, () => assert.equal(driver.verifyWebhook(req("anything")), false));
   });
 });
 

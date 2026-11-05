@@ -16,9 +16,9 @@ const Payment = sequelize.define(
     userId: { type: DataTypes.UUID, allowNull: false },
     planKey: DataTypes.STRING(60),
     provider: {
-      type: DataTypes.ENUM("none", "manual", "flutterwave"),
+      type: DataTypes.ENUM("none", "manual", "mock", "flutterwave", "selcom", "clickpesa"),
       allowNull: false,
-      defaultValue: "flutterwave"
+      defaultValue: "none"
     },
     txRef: { type: DataTypes.STRING(120), allowNull: false, unique: true },
     providerId: DataTypes.STRING(120),

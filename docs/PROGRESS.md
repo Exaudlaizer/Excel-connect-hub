@@ -29,6 +29,8 @@ Living status report. Update at the end of each work session.
 
 - **Production-plan Phase 1 (2026-11-05):** CI workflow, test harness (25 tests: 11 unit, 14 integration against a real Postgres 16 started locally), plan entitlements and Free-plan ad limit, DB TLS/pool options, opt-in RLS, mock-gateway production lock. Tests also exposed two real bugs, now fixed: `db:migrate` failed on an empty DB, and registration could orphan a user.
 
+- **Payment provider layer (2026-11-05):** Flutterwave is unavailable to this project in Tanzania, so gateways are now drivers behind one interface (`backend/src/payments`). Mock and Flutterwave drivers implemented; Selcom and ClickPesa are **not yet written** (waiting on business registration, gateway approval and their official API docs). 48 tests pass (20 without a database); the amount-tamper test was confirmed to fail when the check is removed. Migration verified on fresh and legacy-shaped databases.
+
 ## Not verified
 
 - Never ran the API against Postgres or exercised any endpoint (no DB in this environment).

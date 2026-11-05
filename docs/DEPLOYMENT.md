@@ -49,7 +49,7 @@ Environment variables (see `backend/.env.example`):
 | `SMTP_HOST/PORT/USER/PASS/FROM` | ✓ for real email | Unset = emails printed to the console |
 | `PUBLIC_API_ORIGIN` | ✓ behind TLS proxy | Used to build absolute upload URLs |
 | `UPLOAD_GRACE_MINUTES` | | Prune grace period |
-| `PAYMENTS_ENABLED`, `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY`, `FLW_WEBHOOK_HASH` | only for payments | **All four required together**; the API refuses to boot otherwise |
+| `PAYMENTS_ENABLED`, `PAYMENT_PROVIDER` + that provider's credentials | only for payments | `PAYMENTS_ENABLED=true` needs a real provider (not `mock`) and **every** variable it lists (`requiredEnv`); the API refuses to boot otherwise. Leave payments off for a free launch |
 
 Commands:
 
@@ -75,7 +75,7 @@ See the checklist in [SECURITY.md](../SECURITY.md#hardening-checklist-before-lau
 - [ ] Uptime monitor on `/health`
 - [ ] Error tracking (e.g. Sentry) on both apps
 - [ ] DNS + TLS for app and API domains
-- [ ] Flutterwave webhook URL set to `https://<api>/api/billing/webhook` (only when enabling payments)
+- [ ] Gateway webhook/callback URL set to `https://<api>/api/billing/webhook` (only when enabling payments)
 
 ## Rollback
 

@@ -22,7 +22,7 @@ Please do **not** open a public issue. Email the maintainer (add a monitored add
 | Headers / CORS | Helmet; CORS allow-list from `CLIENT_ORIGIN` | `app.js` |
 | Input validation | express-validator on write routes; JSON/body limit 1 MB | `routes/*`, `app.js` |
 | Uploads | Image MIME allow-list, SVG blocked, 4 MB cap, random filenames, `nosniff`, no directory listing | `uploadController.js`, `app.js` |
-| Payments | Server-side verify of amount and currency; webhook signature with timing-safe compare; idempotent | `billingController.js`, `utils/flutterwave.js` |
+| Payments | Server-side verify of amount and currency; webhook signature with timing-safe compare; idempotent | `billingController.js`, `payments/*` (one driver per gateway) |
 | Query safety | Sequelize parameterised queries; pagination clamped (max 100) | `utils/pagination.js` |
 | Secrets | `.env*` git-ignored; `.env.example` has placeholders only | `.gitignore` |
 
@@ -37,14 +37,14 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 | S-3 | Medium | Open | **No CSP / security headers on the frontend.** `next.config.mjs` sets none (Helmet only covers the API). | Add `headers()` with CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS. |
 | S-4 | Medium | Open | **Rate limits are per-IP only** for login. Distributed or campus-NAT attacks are weakly constrained, and shared NAT can lock out legitimate users. | Add per-account lockout/backoff on repeated failed logins. |
 | S-5 | Low | Open | **Uploads on local disk**, served from the API origin. The type check relies on the client-declared MIME type, with no content sniffing. | Verify magic bytes (e.g. `file-type`), move to object storage with a separate domain, add malware scanning if documents are ever allowed. |
-| S-6 | ~~High~~ | **Fixed 2026-11-05** | **Mock payment driver could grant paid plans free.** With no Flutterwave keys the mock driver echoes the expected amount, and checkout only checked `PAYMENTS_ENABLED`. | `assertEnv()` now refuses to boot if `PAYMENTS_ENABLED=true` without `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH`. Still recommended: also refuse the mock driver whenever `NODE_ENV=production`. |
+| S-6 | ~~High~~ | **Fixed 2026-11-05** | **Mock payment driver could grant paid plans free.** The mock driver echoes the expected amount, and checkout only checked `PAYMENTS_ENABLED`. | `assertEnv()` refuses to boot if `PAYMENTS_ENABLED=true` with the mock provider or without every credential the chosen provider needs; `getProviderByName` also refuses the mock whenever `NODE_ENV=production`. Covered by tests. |
 | S-7 | Low | Open | **Role escalation endpoint.** `PATCH /users/:id/role` accepts `admin`. It is admin-only, but it is a high-value target and has no audit trail. | Add an audit log; require re-authentication for role changes. |
 | S-8 | Low | Open | **No audit logging** of admin actions (approvals, suspensions, deletions). | Add an `audit_logs` table. |
 | S-9 | Medium | Partly fixed | **Dependency vulnerabilities (`npm audit --omit=dev`).** On 2026-11-05: backend 9 reduced to 4 (moderate) after `npm audit fix` and upgrading nodemailer to 10.3.1 (fixed the high/critical `body-parser`, `multer`, `nodemailer`, `proxy-addr`). Remaining backend: `moment`, `uuid`, `qs`/`sequelize` chain (moderate; audit's only "fix" downgrades Sequelize to v3, so it is not applied). Frontend: Next.js moved 14.2.23 to 14.2.35, but 4 advisories remain (`next`, `postcss`, `nanoid`, `source-map-js`) whose fixes need Next 15/16 (a breaking upgrade). | Plan a Next.js 15/16 upgrade; enable Dependabot; run `npm audit` in CI. |
 | S-10 | ~~Low~~ | **Fixed 2026-11-05** | **Database TLS.** No `ssl` option existed. | `DB_SSL=true` enables TLS; `DB_SSL_CA` verifies the server (warns if omitted). Verified the flag is applied; not yet tested against Supabase. |
 | S-12 | Medium | **Fixed 2026-11-05** | **Supabase Data API exposure (anticipated, not yet deployed).** Supabase serves public-schema tables over REST with a public key; tables without RLS would be readable and writable. | `DB_RLS=true` makes `db:migrate` enable RLS on every table with no policies; the app (table owner) is unaffected (tested). Re-run migrate after adding tables. Confirm with an anon-key request after deploying. |
 | S-13 | Medium | **Fixed 2026-11-05** | **Half-created accounts.** If the Free subscription insert failed (e.g. plans not seeded) registration returned 500 but left the user behind, and retries said the email was taken. | Registration is one transaction; `db:migrate` now seeds missing plans. Regression test added. |
-| S-11 | Info | Open | **Unauthenticated webhook** by design; protected only by signature. Make sure `FLW_WEBHOOK_HASH` is set whenever payments are enabled. | Fail boot when payments are enabled without it. |
+| S-11 | Info | Open | **Unauthenticated webhook** by design; protected only by signature. Each driver's `verifyWebhook` must authenticate the caller; the boot check requires the chosen gateway's webhook secret whenever payments are enabled. | Fail boot when payments are enabled without it. |
 
 ## Hardening checklist before launch
 
@@ -55,7 +55,7 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 - [ ] Redis configured for shared rate-limit counters
 - [ ] Real SMTP configured; boot check passes
 - [ ] DB TLS on (`DB_SSL=true` + CA), `DB_RLS=true` on Supabase, backups tested
-- [ ] `PAYMENTS_ENABLED` and Flutterwave keys and webhook hash consistent
+- [ ] `PAYMENTS_ENABLED=true` only with a real `PAYMENT_PROVIDER` and all of its credentials (the API refuses to boot otherwise)
 - [ ] Frontend security headers/CSP in place
 - [ ] `npm audit` clean (or accepted); Dependabot on
 - [ ] Admin account created with a strong unique password

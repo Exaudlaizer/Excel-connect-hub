@@ -36,7 +36,7 @@ router.post(
 
 router.post("/cancel", protect, cancel);
 
-// The webhook is unauthenticated by design — it is called by Flutterwave, not a
+// The webhook is unauthenticated by design — it is called by the payment gateway, not a
 // user — and protects itself with a signature check inside the handler.
 router.post("/webhook", webhook);
 

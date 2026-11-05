@@ -41,7 +41,7 @@ All backend code lives in `backend/src/`.
   cannot be self-registered; they are provisioned with `npm run seed:admin`.
 - Student, company and mentor profiles; CV URL management; image uploads.
 - Community discussions and an admin-curated campus services directory.
-- Subscription plans with Flutterwave billing (built, switched off until `PAYMENTS_ENABLED=true`).
+- Subscription plans with pluggable payment gateways (`backend/src/payments`; switched off until `PAYMENTS_ENABLED=true` with a real `PAYMENT_PROVIDER`).
 - Email OTP verification; a verified email is required to publish content.
 - Company opportunity posting and applicant review APIs.
 - Job and internship listings with student applications.

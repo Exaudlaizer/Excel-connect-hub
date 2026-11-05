@@ -82,9 +82,9 @@ Priority: **P0** = must for launch, **P1** = soon after, **P2** = later.
 
 ### 5.7 Billing
 - P0 Plan catalogue visible to all users; Free plan active for everyone.
-- P0 Paid checkout stays disabled ("coming soon") until `PAYMENTS_ENABLED=true` with valid Flutterwave keys.
+- P0 Paid checkout stays disabled ("coming soon") until `PAYMENTS_ENABLED=true` with a real payment provider and its credentials.
 - P0 Payments verified server-side (amount and currency checked) before granting a plan.
-- P1 Mobile-money-first checkout (M-Pesa, Tigo Pesa, Airtel Money) via Flutterwave.
+- P1 Mobile-money-first checkout (M-Pesa, Tigo Pesa/Mixx, Airtel Money, cards) through a Tanzanian gateway: Selcom or ClickPesa (whichever approves the business first). Flutterwave is not available to this project in Tanzania.
 
 ### 5.8 Admin
 - P0 Analytics overview; approval queues for jobs, ads and courses; user, community and service management.

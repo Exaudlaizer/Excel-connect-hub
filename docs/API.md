@@ -107,7 +107,7 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 | POST `/checkout` | 🔐 | Start checkout `{ planKey }` (refused while payments disabled; 20/15 min) |
 | POST `/confirm` | 🔐 | Verify return `{ txRef }` |
 | POST `/cancel` | 🔐 | Cancel at period end |
-| POST `/webhook` | signature (`verif-hash`) | Flutterwave callback |
+| POST `/webhook` | gateway signature (checked by the active provider's `verifyWebhook`) | Gateway callback; 401 on a bad signature, 503 if the provider is misconfigured |
 
 ## Admin: `/admin`
 

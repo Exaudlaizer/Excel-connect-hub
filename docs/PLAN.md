@@ -11,10 +11,12 @@ Goal: make what exists safe to run in front of real users.
 - [x] Boot guard: payments cannot be enabled with the mock driver
 - [x] Patch dependency advisories that don't require breaking changes
 - [x] Enforce email verification server-side for publishing (SECURITY S-1); tests still to write
-- [ ] Confirm the free-plan one-ad limit is actually enforced
-- [ ] Add DB `ssl` option; production env checklist run-through
-- [ ] Set up CI: install, `next build`, `npm audit`, backend boot smoke test
-- [ ] Commit-message convention (see CONTRIBUTING.md)
+- [x] Free-plan one-ad limit enforced (it was not); tests added
+- [x] DB TLS option, pool size, opt-in Supabase RLS
+- [x] CI: empty-DB migration x2, tests on Postgres 16, audit, tsc, lint, build
+- [x] Fixed `db:migrate` on empty DBs and non-atomic registration (found by the new tests)
+- [x] Commit-message convention (see CONTRIBUTING.md)
+- [ ] Production env checklist run-through (needs real accounts, Week 0)
 
 **Exit criteria:** CI green; S-1 closed; staging deployed.
 

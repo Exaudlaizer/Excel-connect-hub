@@ -37,7 +37,10 @@ Environment variables (see `backend/.env.example`):
 |---|:-:|---|
 | `NODE_ENV=production` | ✓ | |
 | `PORT` | | Host usually injects it |
-| `DATABASE_URL` | ✓ | Required in production; add TLS (`?sslmode=require` or `dialectOptions.ssl`, see SECURITY S-10) |
+| `DATABASE_URL` | ✓ | Required in production |
+| `DB_SSL` / `DB_SSL_CA` | ✓ for hosted DBs | `DB_SSL=true` enables TLS; add the provider CA (PEM, `\n` for newlines) to verify the server |
+| `DB_POOL_MAX` | | Default 10; hosted poolers cap connections |
+| `DB_RLS=true` | Supabase | `db:migrate` enables row-level security on all tables, closing the public REST Data API. Only if the app connects as the table owner |
 | `JWT_SECRET` | ✓ | ≥ 32 chars, random; boot fails on placeholders |
 | `JWT_EXPIRES_IN` | | Default `7d` |
 | `CLIENT_ORIGIN` | ✓ | Exact frontend origin(s), comma-separated |
@@ -53,8 +56,7 @@ Commands:
 ```bash
 cd backend
 npm ci
-npm run db:migrate
-npm run seed:plans
+npm run db:migrate          # tables, indexes, plans (idempotent)
 npm run seed:admin -- --email=… --password=… --name="…"   # once
 npm start
 ```

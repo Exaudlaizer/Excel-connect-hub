@@ -1,6 +1,17 @@
 # Testing Strategy
 
-**Current state: there are no automated tests and no CI.** This document defines what to build first. Verification done so far was manual: the API module loads with 56 routes, `next build` succeeds, and the env guard was exercised in three configurations.
+**Current state:** a test harness and CI exist (since 2026-11-05) and cover the areas ticked below; the rest is the backlog. Run them with:
+
+```bash
+cd backend
+npm test                                   # unit tests only (no database needed)
+TEST_DATABASE_URL=postgres://… npm test    # plus integration tests against a real Postgres (tables are TRUNCATED: use a throwaway DB)
+```
+
+Tests use Node's built-in runner (`node --test`) and Supertest; files live in `backend/tests/`. CI (`.github/workflows/ci.yml`) runs migrations twice on an empty Postgres, the test suite, `npm audit` (fails on high/critical for the backend), and for the frontend `tsc`, lint and build.
+
+**Covered so far:** env/payment guards, mock gateway disabled in production, plan entitlements, `requireVerified`, ad creation gate and Free-plan limit, registration (atomic, no admin, duplicates), login and suspended accounts.
+**Still to do:** the full authorization matrix, OTP and password-reset flows, moderation visibility, applications, billing verify/webhook, uploads, pagination.
 
 ## Priorities (highest risk first)
 

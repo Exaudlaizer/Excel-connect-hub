@@ -121,6 +121,6 @@ These routes additionally require a verified email (admins included) and otherwi
 
 ## Status codes
 
-`200/201` success · `400/422` validation · `401` missing/invalid token or suspended · `403` wrong role · `404` not found · `409` conflict (e.g. email exists, duplicate application) · `429` rate limited · `500` server error.
+`200/201` success · `400` validation failed · `401` missing/invalid token or suspended · `403` wrong role · `404` not found · `409` conflict (e.g. email exists, duplicate application) · `429` rate limited · `500` server error.
 
 > Request/response field shapes are defined by the validators in `backend/src/routes/*` and models. An OpenAPI spec is a planned improvement (see PLAN.md).

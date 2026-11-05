@@ -116,7 +116,16 @@ const live = {
   }
 };
 
-const driver = () => (usingMock() ? mock : live);
+// Config validation already refuses to boot with payments enabled and no keys.
+// This is the second lock: even if that check were bypassed, the mock — which
+// approves whatever amount it is asked about — never runs in production.
+const driver = () => {
+  if (!usingMock()) return live;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Payment gateway keys are not configured; the mock gateway is disabled in production.");
+  }
+  return mock;
+};
 
 async function createPayment(args) {
   return driver().createPayment(args);

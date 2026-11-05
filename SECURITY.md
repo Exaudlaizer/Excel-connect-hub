@@ -41,7 +41,9 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 | S-7 | Low | Open | **Role escalation endpoint.** `PATCH /users/:id/role` accepts `admin`. It is admin-only, but it is a high-value target and has no audit trail. | Add an audit log; require re-authentication for role changes. |
 | S-8 | Low | Open | **No audit logging** of admin actions (approvals, suspensions, deletions). | Add an `audit_logs` table. |
 | S-9 | Medium | Partly fixed | **Dependency vulnerabilities (`npm audit --omit=dev`).** On 2026-11-05: backend 9 reduced to 4 (moderate) after `npm audit fix` and upgrading nodemailer to 10.3.1 (fixed the high/critical `body-parser`, `multer`, `nodemailer`, `proxy-addr`). Remaining backend: `moment`, `uuid`, `qs`/`sequelize` chain (moderate; audit's only "fix" downgrades Sequelize to v3, so it is not applied). Frontend: Next.js moved 14.2.23 to 14.2.35, but 4 advisories remain (`next`, `postcss`, `nanoid`, `source-map-js`) whose fixes need Next 15/16 (a breaking upgrade). | Plan a Next.js 15/16 upgrade; enable Dependabot; run `npm audit` in CI. |
-| S-10 | Low | Open | **Database TLS.** `config/db.js` sets no `ssl` option; managed Postgres usually requires it. | Add `dialectOptions.ssl` driven by an env flag. |
+| S-10 | ~~Low~~ | **Fixed 2026-11-05** | **Database TLS.** No `ssl` option existed. | `DB_SSL=true` enables TLS; `DB_SSL_CA` verifies the server (warns if omitted). Verified the flag is applied; not yet tested against Supabase. |
+| S-12 | Medium | **Fixed 2026-11-05** | **Supabase Data API exposure (anticipated, not yet deployed).** Supabase serves public-schema tables over REST with a public key; tables without RLS would be readable and writable. | `DB_RLS=true` makes `db:migrate` enable RLS on every table with no policies; the app (table owner) is unaffected (tested). Re-run migrate after adding tables. Confirm with an anon-key request after deploying. |
+| S-13 | Medium | **Fixed 2026-11-05** | **Half-created accounts.** If the Free subscription insert failed (e.g. plans not seeded) registration returned 500 but left the user behind, and retries said the email was taken. | Registration is one transaction; `db:migrate` now seeds missing plans. Regression test added. |
 | S-11 | Info | Open | **Unauthenticated webhook** by design; protected only by signature. Make sure `FLW_WEBHOOK_HASH` is set whenever payments are enabled. | Fail boot when payments are enabled without it. |
 
 ## Hardening checklist before launch
@@ -52,7 +54,7 @@ Severity is my judgement of impact for this app. Statuses: **Open**, **Verify** 
 - [ ] `CLIENT_ORIGIN` set to the exact production origin(s)
 - [ ] Redis configured for shared rate-limit counters
 - [ ] Real SMTP configured; boot check passes
-- [ ] DB TLS on, least-privilege DB user, backups tested
+- [ ] DB TLS on (`DB_SSL=true` + CA), `DB_RLS=true` on Supabase, backups tested
 - [ ] `PAYMENTS_ENABLED` and Flutterwave keys and webhook hash consistent
 - [ ] Frontend security headers/CSP in place
 - [ ] `npm audit` clean (or accepted); Dependabot on

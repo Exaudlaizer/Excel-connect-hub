@@ -27,6 +27,8 @@ Living status report. Update at the end of each work session.
 
 - **Email-verification gate (S-1):** `requireVerified` on 9 publish routes. Middleware unit-checked (unverified 403, verified and admin pass) and route wiring confirmed; *not exercised against a live database or UI*.
 
+- **Production-plan Phase 1 (2026-11-05):** CI workflow, test harness (25 tests: 11 unit, 14 integration against a real Postgres 16 started locally), plan entitlements and Free-plan ad limit, DB TLS/pool options, opt-in RLS, mock-gateway production lock. Tests also exposed two real bugs, now fixed: `db:migrate` failed on an empty DB, and registration could orphan a user.
+
 ## Not verified
 
 - Never ran the API against Postgres or exercised any endpoint (no DB in this environment).

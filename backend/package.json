@@ -10,7 +10,8 @@
     "db:migrate": "node src/scripts/migrate.js",
     "db:reset": "node src/scripts/resetDatabase.js",
     "uploads:prune": "node src/scripts/pruneUploads.js",
-    "seed:plans": "node src/scripts/seedPlans.js"
+    "seed:plans": "node src/scripts/seedPlans.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -31,6 +32,7 @@
     "sequelize": "^6.37.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.3.1"
   }
 }

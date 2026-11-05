@@ -26,8 +26,8 @@ docs/                    product + engineering docs
 # Backend (Node, Express, Postgres)
 cd backend && npm install && cp .env.example .env
 npm run dev                 # nodemon server.js
-npm run db:migrate          # idempotent schema
-npm run seed:plans
+npm run db:migrate          # tables, indexes and plans; idempotent, works on an empty DB
+npm test                    # unit tests; set TEST_DATABASE_URL for integration tests (TRUNCATES that DB)
 npm run seed:admin -- --email=… --password=… --name="…"
 
 # Frontend
@@ -74,7 +74,7 @@ cd backend && JWT_SECRET=$(openssl rand -hex 32) node -e 'require("./src/app"); 
 ## Before you finish a task
 
 - [ ] Backend still loads (command above) and frontend `npm run build` passes
-- [ ] New/changed behaviour has tests once the suite exists (docs/TESTING.md)
+- [ ] New/changed behaviour has tests (`cd backend && TEST_DATABASE_URL=… npm test`, see docs/TESTING.md)
 - [ ] Docs updated if behaviour changed: API.md, FEATURES.md, SECURITY.md as relevant
 - [ ] [docs/PROGRESS.md](docs/PROGRESS.md) and [CHANGELOG.md](CHANGELOG.md) updated
 - [ ] No secrets, no new high/critical `npm audit` findings

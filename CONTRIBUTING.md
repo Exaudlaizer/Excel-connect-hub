@@ -25,13 +25,13 @@ chore(deps): bump next to 14.2.35
 
 ```bash
 # backend
-cd backend && npm ci && JWT_SECRET=$(openssl rand -hex 32) node -e 'require("./src/app"); process.exit(0)'
-npm audit --omit=dev            # no new high/critical
+cd backend && npm ci && npm test                     # add TEST_DATABASE_URL=… to include integration tests
+npm audit --omit=dev --audit-level=high
 # frontend
-cd frontend && npm ci && npm run lint && npm run build
+cd frontend && npm ci && npx tsc --noEmit && npm run lint && npm run build
 ```
 
-Once the test suite exists (docs/TESTING.md), `npm test` must pass as well.
+CI runs the same checks (`.github/workflows/ci.yml`) and must be green before merging.
 
 ## Code review checklist
 

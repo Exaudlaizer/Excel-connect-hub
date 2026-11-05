@@ -23,8 +23,7 @@ Primary keys are UUIDs. Money is stored in **minor units** (`priceMinor` = TZS Ã
 createdb excel_connect_hub            # or the SQL below
 cd backend
 cp .env.example .env                  # set DATABASE_URL, JWT_SECRET
-npm run db:migrate                    # idempotent schema + indexes
-npm run seed:plans                    # plan catalogue from config/billing.js
+npm run db:migrate                    # creates missing tables, fixes indexes, seeds missing plans (idempotent)
 npm run seed:admin -- --email=you@example.com --password='â€¦' --name="Admin"
 ```
 
@@ -34,7 +33,7 @@ CREATE DATABASE excel_connect_hub;
 
 ## Migration approach
 
-- `npm run db:migrate` runs idempotent SQL steps (safe to re-run; never drops data). It exists because earlier `sync({ alter: true })` runs created duplicate unique indexes on `users.email` and left foreign keys unindexed.
+- `npm run db:migrate` creates any missing tables (`sequelize.sync()` without `alter`), runs idempotent SQL steps (safe to re-run; never drops data), and creates any missing plans. It works on a brand-new empty database; CI verifies this on every push. It exists because earlier `sync({ alter: true })` runs created duplicate unique indexes on `users.email` and left foreign keys unindexed.
 - `DB_SYNC_ALTER=true` enables `sequelize.sync({ alter: true })` at boot. **Local development only.**
 - There is no migration history table. Before multiple environments exist, adopt a versioned tool (e.g. `umzug` / `sequelize-cli`) so each change is recorded once.
 
@@ -43,7 +42,7 @@ CREATE DATABASE excel_connect_hub;
 | Command | Purpose | Caution |
 |---|---|---|
 | `npm run seed:admin` | Create or promote an admin; resets that account's password | Re-running resets the password |
-| `npm run seed:plans` | Upsert plans from code | Idempotent |
+| `npm run seed:plans` | Upsert plans from code and backfill Free subscriptions for existing users | Idempotent; `db:migrate` already creates missing plans |
 | `npm run uploads:prune` | Delete unreferenced upload files past the grace period | Run with care in production |
 | `npm run db:reset` | Reset the database | **Destructive. Never run against production** |
 

@@ -100,6 +100,8 @@ cd backend
 npm run seed:admin -- --email=admin@example.com --password=change-me-8-chars --name="Site Admin"
 ```
 
+After creating the admin, sign in and confirm the email address from Settings. Admins must verify like any other user before they can publish, and that confirmed address is where the platform will reach its operators.
+
 Re-running the command against an existing email promotes that account to admin and
 resets its password, which is also the way to recover a locked-out admin.
 

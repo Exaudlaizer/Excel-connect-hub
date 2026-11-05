@@ -63,10 +63,14 @@ function authorize(...roles) {
 // Publishing (jobs, ads, courses, community posts, uploads) requires a
 // confirmed email address, so a throwaway sign-up cannot put content in front of
 // other users. Browsing, applying and enrolling stay open to unverified
-// accounts. Admins are provisioned from the command line and are exempt.
+// accounts. Admins are held to the same rule on purpose: a confirmed admin
+// address is the contact the platform uses to reach its operators when
+// something goes wrong. Admin-only actions (approvals, user management,
+// services) are not gated, so an unverified admin can always still moderate and
+// reach Settings to confirm their email.
 // Must run after `protect`.
 function requireVerified(req, res, next) {
-  if (req.user && (req.user.role === "admin" || req.user.emailVerified)) return next();
+  if (req.user && req.user.emailVerified) return next();
 
   res.status(403).json({
     code: "EMAIL_NOT_VERIFIED",

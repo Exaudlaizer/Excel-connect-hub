@@ -51,10 +51,16 @@ async function main() {
     // The beforeUpdate hook re-hashes the password when it changes.
     await existing.update({ role: "admin", status: "active", password });
     console.log(`Promoted existing account to admin: ${email}`);
+    if (!existing.emailVerified) console.log("  Email is not confirmed yet.");
   } else {
     await User.create({ name, email, password, role: "admin" });
     console.log(`Created admin: ${email}`);
+    console.log("  Email is not confirmed yet.");
   }
+  console.log(
+    "Sign in and confirm the email address from Settings (a 6-digit code is sent; it is printed to the\n" +
+      "server console if SMTP is not configured). Admins cannot publish until it is confirmed."
+  );
 
   await sequelize.close();
 }

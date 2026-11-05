@@ -117,7 +117,7 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 
 ## Email-verification gate
 
-These routes additionally require a verified email (admins exempt) and otherwise return `403` with `{ "code": "EMAIL_NOT_VERIFIED", "message": … }`: POST/PATCH `/jobs`, POST/PATCH `/ads`, POST/PATCH `/courses`, POST `/community` and `/community/:id/replies`, POST `/uploads`.
+These routes additionally require a verified email (admins included) and otherwise return `403` with `{ "code": "EMAIL_NOT_VERIFIED", "message": … }`: POST/PATCH `/jobs`, POST/PATCH `/ads`, POST/PATCH `/courses`, POST `/community` and `/community/:id/replies`, POST `/uploads`.
 
 ## Status codes
 

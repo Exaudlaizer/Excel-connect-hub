@@ -5,7 +5,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 ## [Unreleased]
 
 ### Added
-- `requireVerified` middleware: unverified users can no longer publish jobs, ads, courses, community posts/replies or uploads (403 `EMAIL_NOT_VERIFIED`); admins exempt (SECURITY S-1).
+- `requireVerified` middleware: unverified users can no longer publish jobs, ads, courses, community posts/replies or uploads (403 `EMAIL_NOT_VERIFIED`). Admins must verify their email too, so the platform has a confirmed address for operator alerts (SECURITY S-1).
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 

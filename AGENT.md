@@ -67,7 +67,7 @@ cd backend && JWT_SECRET=$(openssl rand -hex 32) node -e 'require("./src/app"); 
 - `server.js` must call `dotenv.config()` before requiring `src/config/db`.
 - Behind a proxy, set `TRUST_PROXY` or every user shares one rate-limit bucket.
 - `DB_SYNC_ALTER=true` is local-dev only. Production uses `npm run db:migrate`.
-- Publishing requires a verified email (`requireVerified` after `protect`). Put it on any new route that creates or edits public content; browsing, applying and enrolling stay open. Admins are exempt.
+- Publishing requires a verified email (`requireVerified` after `protect`). Put it on any new route that creates or edits public content; browsing, applying and enrolling stay open. Admins are held to the same rule (their confirmed email is the operator contact); admin-only actions are not gated, so an unverified admin can still moderate.
 - `npm audit fix --force` would downgrade Sequelize to v3 and push Next to v16. Do not run it blindly.
 - `db:reset` is destructive.
 

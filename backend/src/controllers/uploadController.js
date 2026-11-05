@@ -17,7 +17,8 @@ const multer = require("multer");
  *   3. Size is capped by multer before the whole body is buffered.
  */
 
-const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads");
+// Overridable so tests can write to a throwaway directory.
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "..", "..", "uploads");
 const MAX_BYTES = 4 * 1024 * 1024;
 
 // SVG is deliberately absent: it can carry script and would execute in the

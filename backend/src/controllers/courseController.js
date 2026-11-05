@@ -32,7 +32,7 @@ async function listCourses(req, res, next) {
       offset,
       distinct: true
     });
-    res.json({ courses: rows, pagination: buildMeta({ page, limit, total: count }) });
+    res.json({ courses: rows.map((course) => publicCourse(course, req.user?.id)), pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -55,7 +55,7 @@ async function createCourse(req, res, next) {
       providerId: req.user.id,
       status: req.user.role === "admin" ? "approved" : "pending"
     });
-    res.status(201).json({ course });
+    res.status(201).json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }
@@ -128,7 +128,7 @@ async function updateCourse(req, res, next) {
     else if (Object.keys(updates).length > 0) updates.status = "pending";
 
     await course.update(updates);
-    res.json({ course });
+    res.json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }
@@ -155,7 +155,7 @@ async function updateCourseStatus(req, res, next) {
     const course = await Course.findByPk(req.params.id);
     if (!course) return res.status(404).json({ message: "Course not found" });
     await course.update({ status: req.body.status });
-    res.json({ course });
+    res.json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }

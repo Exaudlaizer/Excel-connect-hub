@@ -10,8 +10,23 @@ TEST_DATABASE_URL=postgres://… npm test    # plus integration tests against a 
 
 Tests use Node's built-in runner (`node --test`) and Supertest; files live in `backend/tests/`. CI (`.github/workflows/ci.yml`) runs migrations twice on an empty Postgres, the test suite, `npm audit` (fails on high/critical for the backend), and for the frontend `tsc`, lint and build.
 
-**Covered so far (48 tests):** env/payment guards, provider registry and driver interface, mock gateway disabled in production, plan entitlements, `requireVerified`, ad creation gate and Free-plan limit, registration (atomic, no admin, duplicates), login and suspended accounts, and billing end to end with the mock gateway: checkout refused while disabled, upgrade only after verify, replay is idempotent, amount and currency tampering refused, unknown reference, audience rules, provider-that-created-it verification, and webhook signature handling (bad, missing, unknown reference, misconfigured).
-**Still to do:** the full authorization matrix, OTP and password-reset flows, moderation visibility, applications, uploads, pagination, and the real Selcom/ClickPesa drivers against their sandboxes.
+**Covered (224 tests, 22 of which need no database).** Measured with `node --test --experimental-test-coverage` against `src/`: **91.6% lines, 75.9% branches, 88.8% functions** overall; every controller is at or above 85% line coverage (services was the weakest at 55% before it got its own suite). Weakest remaining areas: `config/rateLimit.js` (Redis store path), `utils/mailer.js` (real SMTP path), `payments/flutterwave.js` (live HTTP calls), `config/db.js` (SSL branch). Those need external services and are exercised manually or in staging.
+
+| Suite | What it proves |
+|---|---|
+| `authz.test.js` | Table-driven matrix over all 56 routes x anonymous/student/company/mentor/admin/suspended. Fails if any registered route is missing from the spec or any spec entry matches no route |
+| `verification-gate.test.js` | The 9 publish routes block unverified users of every role, including admins; browsing, applying, enrolling, moderation and verification stay open |
+| `otp.test.js` | Code emailed and stored hashed, 60 s cooldown, one live code, 5-guess burn, expiry, format, cross-account, public variants indistinguishable for known and unknown addresses |
+| `password-reset.test.js` | Token hashed, single use, expiry, newer link retires older, identical answers for known/unknown/suspended, per-IP rate limit, suspended after request |
+| `moderation.test.js` | For jobs, ads and courses: starts pending, hidden from public and rivals, visible to owner and admin, only admin approves, edits return to review, others cannot edit, suspended owner treated as anonymous |
+| `courses.test.js`, `applications.test.js` | Enrolment rules and concurrency; roster never exposed; duplicate application 409; applicant visibility; status changes by owner/admin only |
+| `users.test.js`, `community.test.js`, `services.test.js` | Self-service cannot change role/status/email/password/verification; no password hash in any response; admin cannot change own role/status; community and service permissions |
+| `uploads.test.js` | Generated filenames, SVG/HTML/exe/PDF refused, 4 MB cap, nothing written on refusal, admin-only delete; runs in a temp directory |
+| `billing.test.js`, `unit.test.js`, `pagination.test.js`, `ads.test.js`, `auth.test.js` | Payment flow and tampering, boot guards, provider registry, plan limits, registration atomicity, pagination clamps |
+
+**Mutation checks done:** removing the admin rule on `GET /users` fails the matrix; removing the "approved only" filter fails 4 moderation tests; putting the roster back fails the course test; removing the amount check fails the billing test. Each was restored afterwards.
+
+**Still to do:** the real Selcom/ClickPesa drivers against their sandboxes, rate-limit behaviour with Redis, real SMTP, frontend end-to-end (Playwright), and a load check.
 
 ## Priorities (highest risk first)
 

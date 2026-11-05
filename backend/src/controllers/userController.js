@@ -59,6 +59,16 @@ async function updateMe(req, res, next) {
       updates.preferences = mergePreferences(req.user.preferences, req.body.preferences);
     }
 
+    // A confirmation belongs to a specific number. Changing the number must not
+    // keep the old "confirmed" status, or anyone could verify one phone and then
+    // swap in another. (Sending the same number again changes nothing.)
+    if (updates.phone !== undefined) {
+      const next = updates.phone === null ? "" : String(updates.phone).trim();
+      const current = (req.user.phone || "").trim();
+      updates.phone = next || null;
+      if (next !== current) updates.phoneVerified = false;
+    }
+
     const user = await req.user.update(updates);
 
     res.json({ user: publicUser(user) });

@@ -100,6 +100,13 @@ async function updateJob(req, res, next) {
 
     const updates = pickJobFields(req.body);
 
+    // Same rule as advertisements and courses: once approved, an owner's change
+    // to the content sends the listing back to the review queue. Otherwise a
+    // company could get a harmless post approved and then rewrite it. Closing a
+    // listing is not a content change, and admins edit freely.
+    const closing = req.body.status === "closed";
+    if (!isAdmin && !closing && Object.keys(updates).length > 0) updates.status = "pending";
+
     if (req.body.status !== undefined) {
       if (!isAdmin && !OWNER_STATUS_TRANSITIONS.includes(req.body.status)) {
         return res.status(403).json({ message: "Only an admin can change the approval status" });

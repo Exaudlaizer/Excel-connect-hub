@@ -31,6 +31,13 @@ Living status report. Update at the end of each work session.
 
 - **Payment provider layer (2026-11-05):** Flutterwave is unavailable to this project in Tanzania, so gateways are now drivers behind one interface (`backend/src/payments`). Mock and Flutterwave drivers implemented; Selcom and ClickPesa are **not yet written** (waiting on business registration, gateway approval and their official API docs). 48 tests pass (20 without a database); the amount-tamper test was confirmed to fail when the check is removed. Migration verified on fresh and legacy-shaped databases.
 
+- **Phase 2 tests (2026-11-05):** 224 tests (22 need no DB), 91.6% line / 75.9% branch coverage of `backend/src`. Mutation-checked the permissions matrix, the moderation filter, the roster fix and the payment amount check. Defects found and fixed: student-ID leak in the public course list (S-14), job moderation bypass (S-15), account enumeration plus attempts-left off-by-one in public email verification (S-16), phone confirmation surviving a number change (S-17).
+- **Vercel:** deployment on PR #1 is red. Moved the config to `frontend/vercel.json` and documented **Root Directory = `frontend`**. Cause not proven (no access to the Vercel log); needs your Vercel setting and, if it still fails, the log.
+
+## Known behaviours left as they are
+- `GET /applications/applicants` lists applicants for the caller's own jobs only, so an admin sees an empty list. Looks unintended for a moderation view but was not changed without your decision.
+- Uploads trust the client-declared MIME type (no magic-byte check); S-5 remains open until uploads move to object storage.
+
 ## Not verified
 
 - Never ran the API against Postgres or exercised any endpoint (no DB in this environment).

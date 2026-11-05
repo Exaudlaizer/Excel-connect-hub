@@ -14,6 +14,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Fixed (found by the new test suite)
+- Public course list, and create/edit/approve responses, no longer expose enrolled students' IDs (`enrolledStudents`); responses carry `enrolledCount` and the caller's own `isEnrolled` (S-14).
+- Editing an approved job now returns it to review, as ads and courses already did (S-15). Closing a job and admin edits are unaffected.
+- `POST /auth/verification/confirm-public` returns one identical error for every failure, so it cannot reveal which emails are registered; the attempts-left counter is no longer off by one (S-16).
+- Changing a phone number clears its confirmation (S-17).
+
+### Added (tests and tooling)
+- 224-test suite (authorization matrix over every route, verification gate, OTP, password reset, moderation, enrolment, applications, users, community, services, uploads, pagination, billing); 91.6% line coverage.
+- `UPLOAD_DIR` environment variable (defaults to `backend/uploads`) so tests write to a temp directory.
+
+### Changed (deployment)
+- Root `vercel.json` replaced by `frontend/vercel.json`; set Vercel's Root Directory to `frontend` (docs/DEPLOYMENT.md).
+
 ### Changed (payments)
 - Payment gateways are now pluggable drivers (`backend/src/payments`: registry, `mock`, `flutterwave`) selected by `PAYMENT_PROVIDER`; the Flutterwave code moved there unchanged in behaviour. Reason: Flutterwave merchant accounts are not available to this project in Tanzania; Selcom and ClickPesa are the planned drivers.
 - A payment is verified by the provider that created it; `Payment`/`Subscription` rows record the real provider (the mock used to be recorded as `flutterwave`). The `provider` enum gains `mock`, `selcom`, `clickpesa` (migration verified on fresh and legacy-shaped databases).

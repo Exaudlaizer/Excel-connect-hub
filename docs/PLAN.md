@@ -20,6 +20,10 @@ Goal: make what exists safe to run in front of real users.
 
 **Exit criteria:** CI green; S-1 closed; staging deployed.
 
+## Phase 2 status (2026-11-05)
+
+Done: authorization matrix over all routes, verification gate, OTP, password reset, moderation, courses/enrolment, applications, users, community, services, uploads, pagination: 224 tests, 91.6% line coverage. The tests found and fixed four real defects (SECURITY S-14 to S-17). Open: Vercel deployment red until the Root Directory setting is applied (docs/DEPLOYMENT.md).
+
 ## Phase 1: Test and deploy (week 3-4)
 
 - [ ] Backend tests: auth, authorization matrix, approval flow, billing verify (Jest/Vitest + Supertest + throwaway Postgres)

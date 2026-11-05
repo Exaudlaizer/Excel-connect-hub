@@ -12,22 +12,13 @@
 
 ## Frontend on Vercel
 
-The root `vercel.json` builds the app inside `frontend/`:
+The Next.js app lives in `frontend/`, and the repo root has no `package.json`, so Vercel must be told to build from the subfolder. **Set the project's Root Directory to `frontend`** (Project Settings, General, Root Directory). `frontend/vercel.json` only pins the framework.
 
-```json
-{
-  "framework": "nextjs",
-  "installCommand": "cd frontend && npm install",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.next"
-}
-```
+1. Import the GitHub repo in Vercel and set **Root Directory = `frontend`** before the first deploy.
+2. Add the environment variable `NEXT_PUBLIC_API_URL=https://<your-api-host>/api` (Production and Preview). Without it the build still succeeds but the app calls `http://localhost:5000/api`.
+3. Deploy. A preview deployment can build before the API exists, but sign-in will not work until the API is reachable.
 
-1. Import the GitHub repo in Vercel (keep Root Directory as the repo root).
-2. Add environment variable `NEXT_PUBLIC_API_URL=https://<your-api-host>/api` (Production and Preview).
-3. Deploy.
-
-> Alternative that is often more reliable for monorepos: set Vercel's **Root Directory** to `frontend` and delete the custom commands. Use whichever builds cleanly for you. I verified `npm run build` locally; I have not run a Vercel deployment.
+> History: an earlier root-level `vercel.json` ran `cd frontend && ...` commands. On PR #1 the Vercel deployment failed with that config. The Vercel build log was not available to me, so the cause is **not proven**; the likely one is that Vercel's Next.js detection looks for `next` in the root directory's `package.json`. The Root Directory setting is Vercel's documented fix for monorepos. If the deployment still fails after setting it, read the first error lines in the Vercel build log (or run `npx vercel inspect <deployment> --logs`).
 
 ## API
 

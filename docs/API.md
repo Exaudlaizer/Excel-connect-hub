@@ -115,6 +115,13 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 |---|---|---|
 | GET `/analytics` | admin | Platform counts and queues |
 
+## Behaviour notes
+
+- `GET/POST/PATCH /courses` responses never include the roster; each course has `enrolledCount` and `isEnrolled` (the caller's own state).
+- `PATCH /jobs/:id`: an owner's content change returns an approved job to `pending`; `{ "status": "closed" }` does not. Admin edits are not re-queued.
+- `POST /auth/verification/confirm-public`: every failure returns `400 { "message": "That code is not correct or has expired." }`. The signed-in `/auth/verification/confirm` keeps detailed messages.
+- `PATCH /users/me`: changing `phone` resets `phoneVerified`.
+
 ## Email-verification gate
 
 These routes additionally require a verified email (admins included) and otherwise return `403` with `{ "code": "EMAIL_NOT_VERIFIED", "message": … }`: POST/PATCH `/jobs`, POST/PATCH `/ads`, POST/PATCH `/courses`, POST `/community` and `/community/:id/replies`, POST `/uploads`.

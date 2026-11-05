@@ -25,7 +25,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - `UPLOAD_DIR` environment variable (defaults to `backend/uploads`) so tests write to a temp directory.
 
 ### Changed (deployment)
-- Root `vercel.json` replaced by `frontend/vercel.json`; set Vercel's Root Directory to `frontend` (docs/DEPLOYMENT.md).
+- Root `vercel.json` replaced by `frontend/vercel.json`; Vercel's Root Directory should be `frontend` (docs/DEPLOYMENT.md). The PR's Vercel deployment turned green after this change.
 
 ### Changed (payments)
 - Payment gateways are now pluggable drivers (`backend/src/payments`: registry, `mock`, `flutterwave`) selected by `PAYMENT_PROVIDER`; the Flutterwave code moved there unchanged in behaviour. Reason: Flutterwave merchant accounts are not available to this project in Tanzania; Selcom and ClickPesa are the planned drivers.

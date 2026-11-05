@@ -22,7 +22,7 @@ Goal: make what exists safe to run in front of real users.
 
 ## Phase 2 status (2026-11-05)
 
-Done: authorization matrix over all routes, verification gate, OTP, password reset, moderation, courses/enrolment, applications, users, community, services, uploads, pagination: 224 tests, 91.6% line coverage. The tests found and fixed four real defects (SECURITY S-14 to S-17). Open: Vercel deployment red until the Root Directory setting is applied (docs/DEPLOYMENT.md).
+Done: authorization matrix over all routes, verification gate, OTP, password reset, moderation, courses/enrolment, applications, users, community, services, uploads, pagination: 224 tests, 91.6% line coverage. The tests found and fixed four real defects (SECURITY S-14 to S-17). Vercel deployment on the PR went from red to green after the config moved to `frontend/vercel.json` (cause of the original failure unconfirmed; docs/DEPLOYMENT.md).
 
 ## Phase 1: Test and deploy (week 3-4)
 

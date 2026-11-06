@@ -3,6 +3,8 @@ const Ad = require("../models/Ad");
 const User = require("../models/User");
 const { removeUploads } = require("./uploadController");
 const { buildMeta, readPagination } = require("../utils/pagination");
+const { limitsFor } = require("../utils/entitlements");
+const { recordAudit } = require("../utils/audit");
 
 // Explicit whitelist. Spreading req.body into create() would let a caller set
 // `id`, `ownerId`, `createdAt`, or any other column the model happens to have.
@@ -70,8 +72,25 @@ async function myAds(req, res, next) {
   }
 }
 
+// Pending ads count towards the allowance too, otherwise a Free account could
+// queue unlimited submissions while waiting for the first to be reviewed.
+// Rejected and expired ads free the slot. (Two simultaneous requests can both
+// pass this check; the overshoot is bounded by concurrency and not worth a lock.)
+const COUNTED_AD_STATUSES = ["pending", "approved"];
+
 async function createAd(req, res, next) {
   try {
+    const { activeAds } = limitsFor(req.user);
+    if (Number.isFinite(activeAds)) {
+      const current = await Ad.count({ where: { ownerId: req.user.id, status: { [Op.in]: COUNTED_AD_STATUSES } } });
+      if (current >= activeAds) {
+        return res.status(403).json({
+          code: "AD_LIMIT_REACHED",
+          message: `Your plan allows ${activeAds} active advertisement${activeAds === 1 ? "" : "s"}. Remove one or upgrade to Business Pro to add more.`
+        });
+      }
+    }
+
     const ad = await Ad.create({
       ...pickAdFields(req.body),
       ownerId: req.user.id,
@@ -106,6 +125,7 @@ async function updateAd(req, res, next) {
 
     await ad.update(updates);
     removeUploads(orphaned);
+    if (isAdmin && ad.ownerId !== req.user.id) await recordAudit(req, "ad.update", { type: "ad", id: ad.id }, { fields: Object.keys(updates), ownerId: ad.ownerId });
 
     res.json({ ad });
   } catch (error) {
@@ -124,6 +144,7 @@ async function deleteAd(req, res, next) {
 
     await ad.destroy();
     removeUploads([ad.imageUrl, ad.logoUrl]);
+    if (ad.ownerId !== req.user.id) await recordAudit(req, "ad.delete", { type: "ad", id: ad.id }, { title: ad.title, ownerId: ad.ownerId });
 
     res.json({ message: "Advertisement removed" });
   } catch (error) {
@@ -135,7 +156,9 @@ async function updateAdStatus(req, res, next) {
   try {
     const ad = await Ad.findByPk(req.params.id);
     if (!ad) return res.status(404).json({ message: "Advertisement not found" });
+    const from = ad.status;
     await ad.update({ status: req.body.status });
+    await recordAudit(req, "ad.status", { type: "ad", id: ad.id }, { from, to: ad.status, title: ad.title });
     res.json({ ad });
   } catch (error) {
     next(error);

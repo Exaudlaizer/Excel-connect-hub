@@ -45,6 +45,14 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: false
     },
+    // Bumped to cancel every login issued before now (password reset, suspension,
+    // role change, "sign out everywhere"). Each token carries the value it was
+    // issued under and is refused once it no longer matches.
+    tokenVersion: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
     // UI preferences that should follow the account across devices — currently
     // the chosen theme. Kept as JSONB so adding another preference later is not
     // another migration.

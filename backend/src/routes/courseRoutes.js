@@ -8,7 +8,7 @@ const {
   updateCourse,
   updateCourseStatus
 } = require("../controllers/courseController");
-const { authorize, optionalProtect, protect } = require("../middleware/authMiddleware");
+const { authorize, optionalProtect, protect, requireVerified } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
 const router = express.Router();
@@ -19,6 +19,7 @@ router.post(
   "/",
   protect,
   authorize("mentor", "admin"),
+  requireVerified,
   [
     body("title").trim().isLength({ min: 3 }).withMessage("Title is required"),
     body("category").trim().notEmpty().withMessage("Category is required"),
@@ -28,7 +29,7 @@ router.post(
   createCourse
 );
 router.post("/:id/enroll", protect, authorize("student"), enrollCourse);
-router.patch("/:id", protect, authorize("mentor", "admin"), updateCourse);
+router.patch("/:id", protect, authorize("mentor", "admin"), requireVerified, updateCourse);
 router.delete("/:id", protect, authorize("mentor", "admin"), deleteCourse);
 router.patch(
   "/:id/approval",

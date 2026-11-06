@@ -193,8 +193,11 @@ async function verifyCode(user, purpose, submitted) {
   const matches = expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 
   if (!matches) {
+    // increment() updates the instance in place, so attempts already includes
+    // this guess. (Adding 1 again made the count read one too low, and the fourth
+    // wrong guess claimed the code was already burned.)
     await record.increment("attempts");
-    const left = MAX_ATTEMPTS - (record.attempts + 1);
+    const left = MAX_ATTEMPTS - record.attempts;
     return {
       ok: false,
       status: 400,
@@ -231,12 +234,16 @@ async function confirmCodePublic(req, res, next) {
     const email = String(req.body.email || "").trim().toLowerCase();
     const user = await User.findOne({ where: { email } });
 
-    // Same wording as a wrong code, so this cannot be used to discover which
-    // addresses are registered.
-    if (!user) return res.status(400).json({ message: "That code is not correct or has expired." });
+    // Every failure here must look identical, whatever the reason: an unknown
+    // address, no code requested, a wrong guess, an expired or burned code. The
+    // detailed messages ("3 attempts left", "request a new code") would tell a
+    // stranger which addresses are registered. The signed-in endpoint keeps the
+    // detailed messages, since that caller has already proved who they are.
+    const generic = { message: "That code is not correct or has expired." };
+    if (!user || user.status !== "active") return res.status(400).json(generic);
 
     const result = await verifyCode(user, "email", req.body.code);
-    if (!result.ok) return res.status(result.status).json({ message: result.message });
+    if (!result.ok) return res.status(400).json(generic);
 
     res.json({ message: "Email address confirmed. You can sign in now.", emailVerified: true });
   } catch (error) {

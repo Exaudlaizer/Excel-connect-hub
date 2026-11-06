@@ -1,6 +1,19 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
+const { signToken } = require("../utils/tokens");
+
+// Once a token is this old, the next request is answered with a fresh one in the
+// X-Renewed-Token header, so people who stay active are never signed out and a
+// token that is not being used simply runs out.
+const RENEW_AFTER_SECONDS = 12 * 60 * 60;
+
+// A token whose version no longer matches the account's was cancelled
+// (password reset, suspension, "sign out everywhere"). Tokens issued before
+// versions existed carry none and count as version 0.
+function isRevoked(decoded, user) {
+  return (decoded.tv || 0) !== (user.tokenVersion || 0);
+}
 
 async function protect(req, res, next) {
   try {
@@ -18,6 +31,14 @@ async function protect(req, res, next) {
 
     if (!user || user.status !== "active") {
       return res.status(401).json({ message: "Invalid authenticated user" });
+    }
+
+    if (isRevoked(decoded, user)) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    if (decoded.iat && Date.now() / 1000 - decoded.iat > RENEW_AFTER_SECONDS) {
+      res.setHeader("X-Renewed-Token", signToken(user));
     }
 
     req.user = user;
@@ -41,7 +62,7 @@ async function optionalProtect(req, _res, next) {
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findByPk(decoded.id);
-      if (user && user.status === "active") req.user = user;
+      if (user && user.status === "active" && !isRevoked(decoded, user)) req.user = user;
     }
   } catch (error) {
     req.user = null;
@@ -60,4 +81,22 @@ function authorize(...roles) {
   };
 }
 
-module.exports = { protect, optionalProtect, authorize };
+// Publishing (jobs, ads, courses, community posts, uploads) requires a
+// confirmed email address, so a throwaway sign-up cannot put content in front of
+// other users. Browsing, applying and enrolling stay open to unverified
+// accounts. Admins are held to the same rule on purpose: a confirmed admin
+// address is the contact the platform uses to reach its operators when
+// something goes wrong. Admin-only actions (approvals, user management,
+// services) are not gated, so an unverified admin can always still moderate and
+// reach Settings to confirm their email.
+// Must run after `protect`.
+function requireVerified(req, res, next) {
+  if (req.user && req.user.emailVerified) return next();
+
+  res.status(403).json({
+    code: "EMAIL_NOT_VERIFIED",
+    message: "Confirm your email address before publishing. You can do this from Settings."
+  });
+}
+
+module.exports = { protect, optionalProtect, authorize, requireVerified };

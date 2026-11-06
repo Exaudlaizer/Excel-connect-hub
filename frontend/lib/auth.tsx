@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, setTokenRenewalHandler } from "@/lib/api";
 import { ThemeName, isThemeName, useTheme } from "@/components/ThemeProvider";
 
 export type Role = "student" | "company" | "mentor" | "admin";
@@ -138,6 +138,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(nextToken);
     setUser(nextUser);
     setStatus("authenticated");
+  }, []);
+
+  // Keeps the stored login current when the API hands back a renewed token. Does
+  // nothing if the person has signed out in the meantime.
+  useEffect(() => {
+    setTokenRenewalHandler((renewed) => {
+      if (!readStored(TOKEN_KEY)) return;
+      try {
+        const store = localStorage.getItem(TOKEN_KEY) ? localStorage : sessionStorage;
+        store.setItem(TOKEN_KEY, renewed);
+      } catch {
+        // Storage unavailable: the renewed token still works in memory below.
+      }
+      setToken(renewed);
+    });
+    return () => setTokenRenewalHandler(null);
   }, []);
 
   const logout = useCallback(() => {

@@ -74,6 +74,11 @@ step(
 );
 
 step(
+  "users: add tokenVersion",
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 0;`
+);
+
+step(
   "users: add preferences",
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences JSONB NOT NULL DEFAULT '{}'::jsonb;`
 );
@@ -334,13 +339,75 @@ indexes.forEach(([name, target]) => {
   step(`index: ${name}`, `CREATE INDEX IF NOT EXISTS ${name} ON ${target};`);
 });
 
+/* ---------------------------------------------------------------------------
+   Payment providers
+   ---------------------------------------------------------------------------
+   The provider column started as ('none', 'manual', 'flutterwave'). Gateways are
+   now pluggable (src/payments), so existing databases need the new values.
+   ADD VALUE IF NOT EXISTS is idempotent and keeps every existing row.
+   ------------------------------------------------------------------------- */
+["enum_payments_provider", "enum_subscriptions_provider"].forEach((type) => {
+  ["mock", "selcom", "clickpesa"].forEach((value) => {
+    // Older databases built from the raw SQL below share one enum between both
+    // tables, so a given type may not exist; only alter the ones that do.
+    step(
+      `${type}: add '${value}'`,
+      `DO $$ BEGIN
+         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = '${type}') THEN
+           ALTER TYPE ${type} ADD VALUE IF NOT EXISTS '${value}';
+         END IF;
+       END $$;`
+    );
+  });
+});
+
+/* ---------------------------------------------------------------------------
+   Row-level security (Supabase)
+   ---------------------------------------------------------------------------
+   Supabase serves every table in the public schema through its REST Data API
+   using a public "anon" key. This API never uses that route — it connects as
+   the table owner, which bypasses row-level security — so enabling RLS with no
+   policies shuts the REST door completely without affecting the app.
+
+   Opt-in with DB_RLS=true. Enabling it when the app connects as a role that is
+   NOT the table owner would lock the app out, so it is not the default. Re-run
+   the migration after adding tables to cover them.
+   ------------------------------------------------------------------------- */
+if (process.env.DB_RLS === "true") {
+  step(
+    "enable row-level security on all public tables",
+    `DO $$
+     DECLARE t text;
+     BEGIN
+       FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+       END LOOP;
+     END $$;`
+  );
+}
+
 async function run() {
   await sequelize.authenticate();
+
+  // A brand-new database has no tables for the steps below to alter. `sync()`
+  // without `alter` only creates what is missing and never touches an existing
+  // table, so it is safe on a populated database too.
+  require("../models");
+  await sequelize.sync();
   console.log("Connected. Applying migration...\n");
 
   for (const { name, sql } of steps) {
     await sequelize.query(sql);
     console.log(`  ok  ${name}`);
+  }
+
+  // Accounts reference plans by key, so signup fails until the catalogue exists.
+  // Only missing plans are created; prices an admin has changed are left alone.
+  const Plan = require("../models/Plan");
+  const { PLANS } = require("../config/billing");
+  for (const plan of PLANS) {
+    const [, created] = await Plan.findOrCreate({ where: { key: plan.key }, defaults: plan });
+    console.log(`  ${created ? "ok " : "-- "} plan: ${plan.key}${created ? " created" : " already present"}`);
   }
 
   console.log("\nMigration complete.");

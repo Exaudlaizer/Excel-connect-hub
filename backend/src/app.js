@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const crypto = require("crypto");
 const cors = require("cors");
 const express = require("express");
 const helmet = require("helmet");
@@ -18,6 +19,8 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const billingRoutes = require("./routes/billingRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const requestId = require("./middleware/requestId");
+const { sequelize } = require("./config/db");
 const { assertEnv } = require("./config/env");
 const { UPLOAD_DIR } = require("./controllers/uploadController");
 require("./models");
@@ -32,6 +35,8 @@ const app = express();
 if (process.env.TRUST_PROXY) {
   app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
 }
+
+app.use(requestId);
 
 app.use(
   helmet({
@@ -54,7 +59,10 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error("Not allowed by CORS"));
     },
-    credentials: true
+    credentials: true,
+    // Browsers hide non-standard response headers from scripts unless they are
+    // listed here; without it the client would never see a renewed token.
+    exposedHeaders: ["X-Renewed-Token", "X-Request-Id"]
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -77,8 +85,24 @@ app.use(
   })
 );
 
+// Liveness: the process is up. Cheap, safe to poll every few seconds.
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "excel-connect-hub-api" });
+});
+
+// Readiness: the process can actually serve requests, i.e. the database answers.
+// Point uptime monitors and the host's health check here so an outage of the
+// database is noticed, not just an outage of the process.
+app.get("/health/ready", async (_req, res) => {
+  try {
+    await Promise.race([
+      sequelize.query("SELECT 1"),
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error("database check timed out")), 3000).unref())
+    ]);
+    res.json({ status: "ok", database: "up" });
+  } catch (_error) {
+    res.status(503).json({ status: "unavailable", database: "down" });
+  }
 });
 
 // Credential endpoints get a much tighter budget than the global limiter,
@@ -94,11 +118,30 @@ app.use(
     message: "Too many login attempts. Try again later."
   })
 );
+// A second budget keyed on the ACCOUNT, because the per-IP one above cannot stop
+// an attacker who rotates addresses, and punishes a campus sharing one. Keyed on
+// a hash of the submitted email, so an address that has no account is throttled
+// in exactly the same way and the response never reveals whether one exists.
+// Malformed requests with no email share a single bucket.
+const accountKey = (req) =>
+  crypto.createHash("sha256").update(String(req.body?.email || "").trim().toLowerCase()).digest("hex");
+
+app.use(
+  "/api/auth/login",
+  makeLimiter({
+    name: "login-account",
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    skipSuccessfulRequests: true,
+    keyGenerator: accountKey,
+    message: "Too many login attempts for this account. Try again later."
+  })
+);
 // Also per-IP, and the audience is students on shared campus wifi — twenty an
 // hour would have meant twenty signups per hour for a whole university. What
 // actually keeps junk accounts out is the unique-email constraint and the fact
-// that an unverified account cannot do anything until a code sent to a real
-// inbox is entered.
+// that an unverified account cannot publish anything (see requireVerified)
+// until a code sent to a real inbox is entered.
 app.use(
   "/api/auth/register",
   makeLimiter({

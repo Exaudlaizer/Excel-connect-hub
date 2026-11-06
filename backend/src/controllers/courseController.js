@@ -3,6 +3,7 @@ const { sequelize } = require("../config/db");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const { buildMeta, readPagination } = require("../utils/pagination");
+const { recordAudit } = require("../utils/audit");
 
 async function listCourses(req, res, next) {
   try {
@@ -32,7 +33,7 @@ async function listCourses(req, res, next) {
       offset,
       distinct: true
     });
-    res.json({ courses: rows, pagination: buildMeta({ page, limit, total: count }) });
+    res.json({ courses: rows.map((course) => publicCourse(course, req.user?.id)), pagination: buildMeta({ page, limit, total: count }) });
   } catch (error) {
     next(error);
   }
@@ -55,7 +56,7 @@ async function createCourse(req, res, next) {
       providerId: req.user.id,
       status: req.user.role === "admin" ? "approved" : "pending"
     });
-    res.status(201).json({ course });
+    res.status(201).json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }
@@ -128,7 +129,8 @@ async function updateCourse(req, res, next) {
     else if (Object.keys(updates).length > 0) updates.status = "pending";
 
     await course.update(updates);
-    res.json({ course });
+    if (isAdmin && course.providerId !== req.user.id) await recordAudit(req, "course.update", { type: "course", id: course.id }, { fields: Object.keys(updates), ownerId: course.providerId });
+    res.json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }
@@ -144,6 +146,7 @@ async function deleteCourse(req, res, next) {
     }
 
     await course.destroy();
+    if (course.providerId !== req.user.id) await recordAudit(req, "course.delete", { type: "course", id: course.id }, { title: course.title, ownerId: course.providerId });
     res.json({ message: "Course removed" });
   } catch (error) {
     next(error);
@@ -154,8 +157,10 @@ async function updateCourseStatus(req, res, next) {
   try {
     const course = await Course.findByPk(req.params.id);
     if (!course) return res.status(404).json({ message: "Course not found" });
+    const from = course.status;
     await course.update({ status: req.body.status });
-    res.json({ course });
+    await recordAudit(req, "course.status", { type: "course", id: course.id }, { from, to: course.status, title: course.title });
+    res.json({ course: publicCourse(course, req.user.id) });
   } catch (error) {
     next(error);
   }

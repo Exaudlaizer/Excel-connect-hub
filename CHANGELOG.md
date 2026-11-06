@@ -1,0 +1,80 @@
+# Changelog
+
+Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are not yet tagged; entries are grouped by date.
+
+## [Unreleased]
+
+### Added
+- Test suite (`backend/tests`, Node test runner + Supertest) and GitHub Actions CI (empty-DB migration x2, tests against Postgres 16, audit, `tsc`, lint, build).
+- `backend/src/utils/entitlements.js`: single place for plan limits.
+- `DB_SSL`, `DB_SSL_CA`, `DB_POOL_MAX` and opt-in `DB_RLS` (Supabase row-level security) settings.
+- Frontend ESLint config (`next/core-web-vitals`); `npm run lint` is now non-interactive.
+- The mock payment gateway now throws in production as a second lock behind the boot check.
+- `requireVerified` middleware: unverified users can no longer publish jobs, ads, courses, community posts/replies or uploads (403 `EMAIL_NOT_VERIFIED`). Admins must verify their email too, so the platform has a confirmed address for operator alerts (SECURITY S-1).
+- Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
+- Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
+
+### Security (Phase 4: frontend headers)
+- The frontend now sends a Content-Security-Policy and the standard security headers on every page; `X-Powered-By` is removed (SECURITY S-3). The policy is built from `NEXT_PUBLIC_API_URL`, so **that variable must be set in Vercel before the production build** (headers are fixed at build time).
+- `frontend/scripts/check-csp.mjs`: a browser-based check (Playwright) that loads public, signed-in and admin pages and reports any CSP violation, failed request, uncaught error or missing header. It includes a negative control proving the policy blocks foreign scripts, connections and frames. Running it found that the first draft of the policy would have blocked the site's Google Fonts; fixed by allowing exactly `fonts.googleapis.com` (styles) and `fonts.gstatic.com` (font files).
+- Known limit: `script-src` still allows `'unsafe-inline'`.
+
+### Security (Phase 4: uploads)
+- Uploaded images are now identified by their **content**, not the browser's label: JPEG/PNG/GIF/WebP/AVIF signatures are checked, a mismatch or a non-image is refused, and the stored extension comes from the detected type (SECURITY S-5).
+- **Pluggable image storage** (`backend/src/storage`): `STORAGE_DRIVER=local` (default, unchanged behaviour) or `supabase` (public Supabase Storage bucket, via its REST API with a server-side secret key). Deleting an ad removes its images from whichever store holds them, so switching drivers strands nothing. A half-configured driver fails at boot, never silently falls back to disk. Supabase failures give users a calm 502 and never expose the key.
+- `removeUploads` is now asynchronous (and still never throws).
+- Not verified against a real Supabase project.
+
+### Security and operations (Phase 4: audit, alerts, monitoring)
+- **Audit log** (`audit_logs`, `GET /api/admin/audit`, Activity tab in the admin page): who approved or rejected content, edited or deleted other people's content, suspended an account, changed a role, changed the services directory, pinned a post, signed out everywhere, reset a password, or hit a payment that did not match its charge (S-7, S-8). Failure to write a row never fails the action.
+- **Operator alerts** by email (`ALERT_EMAILS`, else verified admins; one email per kind of problem per 15 minutes) for: a payment whose verified amount or currency differs from the charge, bad payment-webhook signatures, a misconfigured payment provider, repeated 5xx errors, and process crashes. Abandoned payments do not alert.
+- **Monitoring:** optional Sentry (`SENTRY_DSN`; reports carry the error and stack only), a request id on every response and error log (`X-Request-Id`), errors logged as one JSON line, `GET /health/ready` (503 when the database is down), and a crash handler that logs, alerts, flushes and exits 1.
+- Friendly error screens (`app/error.tsx`, `app/global-error.tsx`).
+- **Fixed:** stack traces were sent to clients unless `NODE_ENV` was exactly `production`; now only for `development` and `test` (S-18).
+
+### Security (Phase 4: sessions)
+- Logins are revocable: each account has a `tokenVersion`, every token carries it, and a password reset, suspension (and reinstatement), role change or the new `POST /api/auth/logout-all` cancels all existing logins immediately (SECURITY S-2).
+- Logins now last 24 hours (was 7 days) and renew themselves: once a token is over 12 hours old the API returns a fresh one in `X-Renewed-Token` (exposed to browsers by CORS) and the frontend stores it, so active users are never signed out. A stolen token that is not being used dies within a day.
+- New per-account login throttle: 5 failed attempts per 15 minutes per email address, keyed on a hash of the email so unknown addresses are throttled identically and nothing is revealed (SECURITY S-4). The per-IP limiter stays.
+- "Sign out on all devices" button in Settings, Account.
+- Migration: `users.tokenVersion` (run `npm run db:migrate` on existing databases).
+
+### Fixed (found by the new test suite)
+- Public course list, and create/edit/approve responses, no longer expose enrolled students' IDs (`enrolledStudents`); responses carry `enrolledCount` and the caller's own `isEnrolled` (S-14).
+- Editing an approved job now returns it to review, as ads and courses already did (S-15). Closing a job and admin edits are unaffected.
+- `POST /auth/verification/confirm-public` returns one identical error for every failure, so it cannot reveal which emails are registered; the attempts-left counter is no longer off by one (S-16).
+- Changing a phone number clears its confirmation (S-17).
+
+### Added (tests and tooling)
+- 224-test suite (authorization matrix over every route, verification gate, OTP, password reset, moderation, enrolment, applications, users, community, services, uploads, pagination, billing); 91.6% line coverage.
+- `UPLOAD_DIR` environment variable (defaults to `backend/uploads`) so tests write to a temp directory.
+
+### Changed (deployment)
+- Root `vercel.json` replaced by `frontend/vercel.json`; Vercel's Root Directory should be `frontend` (docs/DEPLOYMENT.md). The PR's Vercel deployment turned green after this change.
+
+### Changed (payments)
+- Payment gateways are now pluggable drivers (`backend/src/payments`: registry, `mock`, `flutterwave`) selected by `PAYMENT_PROVIDER`; the Flutterwave code moved there unchanged in behaviour. Reason: Flutterwave merchant accounts are not available to this project in Tanzania; Selcom and ClickPesa are the planned drivers.
+- A payment is verified by the provider that created it; `Payment`/`Subscription` rows record the real provider (the mock used to be recorded as `flutterwave`). The `provider` enum gains `mock`, `selcom`, `clickpesa` (migration verified on fresh and legacy-shaped databases).
+- The boot check generalises to "the chosen provider has all its credentials"; the webhook returns 503 (not a fake 200) when the provider is misconfigured.
+- 23 new tests (billing flow, amount/currency tampering, replay, audience, webhook signatures, registry); a mutation check confirmed the amount-tamper test fails when the check is removed.
+
+### Fixed
+- `npm run db:migrate` failed on an empty database (`relation "users" does not exist`) despite documenting itself as the fresh-setup path; it now creates missing tables first and seeds missing plans.
+- Registration could leave a user without a subscription when plans were not seeded; it is now a single transaction.
+- Free-plan limit of one active advertisement was advertised but never enforced; now enforced (`AD_LIMIT_REACHED`, 403). Pending ads count; rejected/expired free the slot; Business Pro and admins are unlimited.
+
+### Changed
+- `backend/server.js` now loads `./src/config/db` and `./src/app` directly.
+- `vercel.json` replaced with a valid Next.js monorepo configuration (it previously contained a text folder diagram).
+- Dependencies: `nodemailer` 9 → 10.3.1; `next` and `eslint-config-next` 14.2.23 → 14.2.35; backend lockfile updated via `npm audit fix` (backend advisories 9 → 4).
+- `README.md` refreshed to match the current structure and link the docs.
+
+### Removed
+- 33 one-line re-export shim files under `backend/controllers`, `models`, `routes`, `middleware`, `config` and `backend/app.js` (they only forwarded to `backend/src/*`).
+
+### Known issues
+- Remaining dependency advisories need a Next.js 15/16 upgrade (frontend) or have no non-breaking fix (backend `moment`/`uuid` via Sequelize).
+
+## 2026-11 and earlier
+
+- Initial platform: auth, roles, jobs, applications, ads, courses, community, services, uploads, billing (disabled), admin analytics, Next.js frontend.

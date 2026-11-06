@@ -18,7 +18,7 @@ const Subscription = sequelize.define(
       defaultValue: "active"
     },
     provider: {
-      type: DataTypes.ENUM("none", "manual", "flutterwave"),
+      type: DataTypes.ENUM("none", "manual", "mock", "flutterwave", "selcom", "clickpesa"),
       allowNull: false,
       defaultValue: "none"
     },

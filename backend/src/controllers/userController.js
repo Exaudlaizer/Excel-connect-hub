@@ -1,6 +1,8 @@
 const { Op } = require("sequelize");
 const User = require("../models/User");
 const { publicUser } = require("./authController");
+const { revokeTokens } = require("../utils/tokens");
+const { recordAudit } = require("../utils/audit");
 const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function listUsers(req, res, next) {
@@ -59,6 +61,16 @@ async function updateMe(req, res, next) {
       updates.preferences = mergePreferences(req.user.preferences, req.body.preferences);
     }
 
+    // A confirmation belongs to a specific number. Changing the number must not
+    // keep the old "confirmed" status, or anyone could verify one phone and then
+    // swap in another. (Sending the same number again changes nothing.)
+    if (updates.phone !== undefined) {
+      const next = updates.phone === null ? "" : String(updates.phone).trim();
+      const current = (req.user.phone || "").trim();
+      updates.phone = next || null;
+      if (next !== current) updates.phoneVerified = false;
+    }
+
     const user = await req.user.update(updates);
 
     res.json({ user: publicUser(user) });
@@ -79,7 +91,11 @@ async function updateUserStatus(req, res, next) {
       return res.status(400).json({ message: "You cannot change your own account status" });
     }
 
+    const from = user.status;
     await user.update({ status: req.body.status });
+    // Reinstating must not bring back logins from before the suspension.
+    await revokeTokens(user);
+    await recordAudit(req, "user.status", { type: "user", id: user.id }, { from, to: user.status, email: user.email });
     res.json({ user });
   } catch (error) {
     next(error);
@@ -98,7 +114,10 @@ async function updateUserRole(req, res, next) {
       return res.status(400).json({ message: "You cannot change your own role" });
     }
 
+    const from = user.role;
     await user.update({ role: req.body.role });
+    await revokeTokens(user);
+    await recordAudit(req, "user.role", { type: "user", id: user.id }, { from, to: user.role, email: user.email });
     res.json({ user });
   } catch (error) {
     next(error);

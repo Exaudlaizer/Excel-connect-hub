@@ -1,7 +1,7 @@
 const express = require("express");
 const { body } = require("express-validator");
 const { createAd, deleteAd, listAds, myAds, updateAd, updateAdStatus } = require("../controllers/adController");
-const { authorize, optionalProtect, protect } = require("../middleware/authMiddleware");
+const { authorize, optionalProtect, protect, requireVerified } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
 const router = express.Router();
@@ -31,8 +31,8 @@ const writeValidators = [
 router.get("/", optionalProtect, listAds);
 router.get("/mine", protect, myAds);
 
-router.post("/", protect, authorize("student", "company", "mentor", "admin"), writeValidators, validate, createAd);
-router.patch("/:id", protect, writeValidators, validate, updateAd);
+router.post("/", protect, authorize("student", "company", "mentor", "admin"), requireVerified, writeValidators, validate, createAd);
+router.patch("/:id", protect, requireVerified, writeValidators, validate, updateAd);
 router.delete("/:id", protect, deleteAd);
 
 router.patch(

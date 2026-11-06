@@ -164,7 +164,7 @@ export default function DashboardPage() {
         <div className="alert alert-info mb-6" role="status">
           <MailWarning size={17} className="mt-0.5 shrink-0" aria-hidden />
           <span className="min-w-0 flex-1">
-            Your email address is not confirmed yet. We sent a 6-digit code to{" "}
+            Confirm your email to publish jobs, ads, courses and posts. We sent a 6-digit code to{" "}
             <strong className="break-all text-ink">{user.email}</strong>.
           </span>
           <Link href="/settings" className="btn btn-primary btn-sm focus-ring shrink-0">

@@ -4,9 +4,28 @@
 // against the wrong database.
 require("dotenv").config();
 
-const { connectDB, sequelize } = require("./config/db");
+const monitoring = require("./src/utils/monitoring");
+
+// Error reporting starts first so that a failure while booting is captured too.
+// It does nothing unless SENTRY_DSN is set.
+monitoring.init();
+
+const { connectDB, sequelize } = require("./src/config/db");
 const { closeRateLimitStore, initRateLimitStore } = require("./src/config/rateLimit");
 const { verifyTransport } = require("./src/utils/mailer");
+const { alertOperators, flushAlerts } = require("./src/utils/alerts");
+const { installProcessHandlers } = require("./src/utils/processGuards");
+
+// Anything nobody caught: log it, report it, tell the operators, then exit so
+// the host restarts a clean process.
+installProcessHandlers({
+  alert: alertOperators,
+  capture: monitoring.captureException,
+  flush: async () => {
+    await flushAlerts();
+    await monitoring.flush();
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,7 +41,7 @@ async function start() {
   await initRateLimitStore();
   await verifyTransport();
 
-  const app = require("./app");
+  const app = require("./src/app");
 
   server = app.listen(PORT, () => {
     console.log(`Excel Connect Hub API running on port ${PORT}`);
@@ -31,8 +50,10 @@ async function start() {
 
 // Without this catch a failed database connection is an unhandled rejection:
 // the process stays alive, nothing is listening, and nothing is logged.
-start().catch((error) => {
-  console.error("Failed to start the API:", error.message);
+start().catch(async (error) => {
+  console.error(JSON.stringify({ level: "fatal", message: "Failed to start the API", error: error.message }));
+  monitoring.captureException(error, { phase: "boot" });
+  await monitoring.flush();
   process.exit(1);
 });
 
@@ -43,9 +64,12 @@ function shutdown(signal) {
   console.log(`\n${signal} received, shutting down...`);
 
   const done = () =>
-    Promise.all([sequelize.close().catch(() => {}), closeRateLimitStore().catch(() => {})]).then(() =>
-      process.exit(0)
-    );
+    Promise.all([
+      sequelize.close().catch(() => {}),
+      closeRateLimitStore().catch(() => {}),
+      flushAlerts().catch(() => {}),
+      monitoring.flush()
+    ]).then(() => process.exit(0));
 
   if (!server) return done();
 

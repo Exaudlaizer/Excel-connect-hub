@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
-const { signToken } = require("../utils/tokens");
+const { sequelize } = require("../config/db");
+const { revokeTokens, signToken } = require("../utils/tokens");
+const { recordAudit } = require("../utils/audit");
 const { issueCode } = require("./otpController");
 
 function publicUser(user) {
@@ -37,16 +39,19 @@ async function register(req, res, next) {
     }
 
     const safeRole = SELF_SERVICE_ROLES.includes(role) ? role : "student";
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: safeRole,
-      phone: phone ? String(phone).trim() : null
+    // One transaction: if the Free subscription cannot be created (for example
+    // the plans were never seeded) the user is rolled back too. Otherwise the
+    // caller gets a 500 and every retry is told the email is already taken.
+    const user = await sequelize.transaction(async (transaction) => {
+      const created = await User.create(
+        { name, email, password, role: safeRole, phone: phone ? String(phone).trim() : null },
+        { transaction }
+      );
+      // Every account starts on the Free plan. Created here so the record exists
+      // from the first request rather than being lazily backfilled later.
+      await Subscription.create({ userId: created.id, planKey: "free", status: "active", provider: "none" }, { transaction });
+      return created;
     });
-    // Every account starts on the Free plan. Created here so the record exists
-    // from the first request rather than being lazily backfilled later.
-    await Subscription.create({ userId: user.id, planKey: "free", status: "active", provider: "none" });
 
     // Delivered by email; a failure here must not fail the registration, the
     // user can request another code from the verification screen.
@@ -85,8 +90,19 @@ async function login(req, res, next) {
   }
 }
 
+// Cancels every login this account has, on every device, including this one.
+async function logoutAll(req, res, next) {
+  try {
+    await revokeTokens(req.user);
+    await recordAudit(req, "auth.logout_all", { type: "user", id: req.user.id });
+    res.json({ message: "You have been signed out on every device." });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function me(req, res) {
   res.json({ user: publicUser(req.user) });
 }
 
-module.exports = { register, login, me, publicUser, SELF_SERVICE_ROLES };
+module.exports = { register, login, logoutAll, me, publicUser, SELF_SERVICE_ROLES };

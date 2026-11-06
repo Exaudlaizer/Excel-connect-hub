@@ -1,5 +1,14 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+// The API answers with a fresh token (X-Renewed-Token) once the one we sent is
+// more than half way through its life, so people who stay active are never
+// signed out. The auth provider registers how to store it; api() just reports it.
+let onTokenRenewed: ((token: string) => void) | null = null;
+
+export function setTokenRenewalHandler(handler: ((token: string) => void) | null) {
+  onTokenRenewed = handler;
+}
+
 export type ApiOptions = RequestInit & {
   token?: string | null;
 };
@@ -73,6 +82,10 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
     throw new ApiError(STATUS_MESSAGES[0], 0);
   }
+
+  // Only a request that actually carried a token can be answered with a renewal.
+  const renewed = token ? response.headers.get("X-Renewed-Token") : null;
+  if (renewed && onTokenRenewed) onTokenRenewed(renewed);
 
   // 204 and other empty bodies are valid; do not treat them as a parse failure.
   const data = await response.json().catch(() => ({} as Record<string, unknown>));

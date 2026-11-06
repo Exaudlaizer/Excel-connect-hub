@@ -10,9 +10,11 @@
     "db:migrate": "node src/scripts/migrate.js",
     "db:reset": "node src/scripts/resetDatabase.js",
     "uploads:prune": "node src/scripts/pruneUploads.js",
-    "seed:plans": "node src/scripts/seedPlans.js"
+    "seed:plans": "node src/scripts/seedPlans.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\""
   },
   "dependencies": {
+    "@sentry/node": "^11.11.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -23,7 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.2.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.3.1",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "rate-limit-redis": "^4.3.1",
@@ -31,6 +33,7 @@
     "sequelize": "^6.37.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.3.1"
   }
 }

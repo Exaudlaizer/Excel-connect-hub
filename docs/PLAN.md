@@ -54,7 +54,11 @@ Done: authorization matrix over all routes, verification gate, OTP, password res
 - [ ] Swahili UI
 - [ ] Admin audit log (S-8)
 
-## Phase 4: Monetise (month 3-4)
+## Phase 4 status: hardening and operations (2026-11-06)
+
+Done: revocable and renewing logins, per-account login throttle, audit log with an admin Activity tab, operator email alerts, optional Sentry, request ids, readiness endpoint, crash handler, error screens, content-based image checks, pluggable image storage with a Supabase driver, frontend security headers and CSP (browser-verified). Remaining from the original outline: nothing, except the known gaps recorded in SECURITY.md (token still in localStorage, `'unsafe-inline'` scripts, Supabase driver not yet tried on a real project, no pruning of orphaned files in a Supabase bucket).
+
+## Phase 4 (original outline, kept for reference): Monetise (month 3-4)
 
 - [ ] Write the Selcom or ClickPesa driver from its official docs, then flip `PAYMENTS_ENABLED` in staging with sandbox credentials
 - [ ] Mobile-money checkout testing (M-Pesa, Tigo Pesa, Airtel Money)

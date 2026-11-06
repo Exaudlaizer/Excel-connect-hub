@@ -1,7 +1,7 @@
 const { test, describe, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
-const { hasDb, load, closeDb } = require("./helpers");
+const { hasDb, load, closeDb, waitFor } = require("./helpers");
 const monitoring = require("../src/utils/monitoring");
 const { installProcessHandlers } = require("../src/utils/processGuards");
 
@@ -66,12 +66,11 @@ describe("crash handlers", () => {
     });
     return { proc, seen };
   };
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
   test("an uncaught exception is logged, reported, alerted, flushed, then the process exits with 1", async () => {
     const { proc, seen } = build();
     proc.emit("uncaughtException", new Error("kaboom"));
-    await settle();
+    assert.ok(await waitFor(() => seen.exits.length > 0), "the process never exited");
     assert.equal(JSON.parse(seen.logs[0]).kind, "uncaughtException");
     assert.deepEqual(seen.captured[0], ["kaboom", { kind: "uncaughtException" }]);
     assert.equal(seen.alerts[0].key, "process-crash");
@@ -83,7 +82,7 @@ describe("crash handlers", () => {
   test("an unhandled rejection with a non-Error value is handled too", async () => {
     const { proc, seen } = build();
     proc.emit("unhandledRejection", "just a string");
-    await settle();
+    assert.ok(await waitFor(() => seen.exits.length > 0), "the process never exited");
     assert.equal(JSON.parse(seen.logs[0]).message, "just a string");
     assert.deepEqual(seen.exits, [1]);
   });
@@ -92,7 +91,9 @@ describe("crash handlers", () => {
     const { proc, seen } = build();
     proc.emit("uncaughtException", new Error("one"));
     proc.emit("uncaughtException", new Error("two"));
-    await settle();
+    assert.ok(await waitFor(() => seen.exits.length > 0), "the process never exited");
+    // Give a (wrong) second run time to show itself before concluding there was none.
+    await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(seen.alerts.length, 1);
     assert.deepEqual(seen.exits, [1]);
   });
@@ -100,14 +101,14 @@ describe("crash handlers", () => {
   test("a hung alert cannot keep a crashed process alive", async () => {
     const { proc, seen } = build({ alert: () => new Promise(() => {}), waitMs: 30 });
     proc.emit("uncaughtException", new Error("stuck"));
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.ok(await waitFor(() => seen.exits.length > 0), "a hung alert kept the crashed process alive");
     assert.deepEqual(seen.exits, [1]);
   });
 
   test("it still exits if reporting itself throws", async () => {
     const { proc, seen } = build({ capture: () => { throw new Error("reporter broke"); } });
     proc.emit("uncaughtException", new Error("x"));
-    await settle();
+    assert.ok(await waitFor(() => seen.exits.length > 0), "the process never exited");
     assert.deepEqual(seen.exits, [1]);
   });
 });

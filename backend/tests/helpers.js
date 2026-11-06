@@ -140,6 +140,18 @@ let ipCounter = 0;
 // A fresh, valid client address per call.
 const nextIp = () => `10.${Math.floor(++ipCounter / 65000) % 250}.${Math.floor(ipCounter / 250) % 250}.${(ipCounter % 250) + 1}`;
 
+// Polls until the condition is true (or the timeout passes) instead of sleeping a
+// fixed time. A fixed sleep is too short on a loaded machine and wastes time on a
+// fast one; waiting for the thing itself is neither. Returns whether it happened.
+async function waitFor(predicate, { timeout = 3000, interval = 5 } = {}) {
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    if (await predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return Boolean(await predicate());
+}
+
 async function closeDb() {
   if (loaded) await loaded.sequelize.close();
 }
@@ -158,6 +170,7 @@ module.exports = {
   makeAd,
   captureMail,
   nextIp,
+  waitFor,
   extractCode,
   extractResetToken,
   closeDb

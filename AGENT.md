@@ -50,6 +50,11 @@ cd backend && JWT_SECRET=$(openssl rand -hex 32) node -e 'require("./src/app"); 
 - **Moderated content** (jobs, ads, courses) must default to `pending` and be filtered to `approved` for public reads.
 - **Money:** minor units (`priceMinor`), currency `TZS`.
 - **Frontend:** TypeScript, Next.js App Router, client data via TanStack Query, API calls through `lib/api.ts`, session via `lib/auth.tsx`, Tailwind for styling. Guard private pages with `RequireAuth`.
+- **Sessions:** logins are revocable. Anything that changes an account's credentials or standing (password reset, suspension, role change) must call `revokeTokens(user)` (`utils/tokens`). Tokens renew themselves via `X-Renewed-Token`; do not rely on a fixed lifetime.
+- **Audit:** record admin and security-sensitive actions with `recordAudit(req, action, { type, id }, details)` (`utils/audit`) after the action succeeds. Details are small facts (old and new values, ids), never tokens, passwords or request bodies. It never throws.
+- **Alerts:** use `alertOperators({ key, subject, text })` (`utils/alerts`) for things a human must act on (not for routine client errors). One email per `key` per 15 minutes. Put ids and amounts in `text`, never secrets.
+- **Images:** go through the storage layer (`storage/`), never `fs` directly. The file's type is decided by `utils/imageSignature` (content), not the browser's label. Delete via `removeUploads`, which finds the right store.
+- **Frontend headers:** `frontend/next.config.mjs` sets the CSP. Adding a third-party script, font, image host or API means updating it and running `frontend/scripts/check-csp.mjs`.
 - **Comments** in this codebase explain *why*; keep that style.
 
 ## Security rules (non-negotiable)

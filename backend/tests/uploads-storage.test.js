@@ -2,7 +2,7 @@ const { test, describe, before, beforeEach, afterEach, after } = require("node:t
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { hasDb, load, resetDb, makeUser, makeAd, closeDb } = require("./helpers");
+const { hasDb, load, resetDb, makeUser, makeAd, closeDb, waitFor } = require("./helpers");
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16]), Buffer.from("JFIF\0"), Buffer.alloc(16)]);
@@ -177,7 +177,8 @@ describe("uploads: content checks and storage drivers", { skip: !hasDb && "set T
       const foreign = await makeAd(user, { imageUrl: "https://cdn.example.com/their-photo.png", logoUrl: null });
 
       assert.equal((await request(app).delete(`/api/ads/${ad.id}`).set(auth)).status, 200);
-      await new Promise((resolve) => setTimeout(resolve, 100)); // cleanup is fire-and-forget
+      // Cleanup is fire-and-forget, so wait for it rather than guess how long it takes.
+      assert.ok(await waitFor(() => calls.length >= 1 && stored().length === 0), "cleanup did not finish");
       assert.deepEqual(calls.map((c) => [c.method, c.url]), [["DELETE", `https://abcdefgh.supabase.co/storage/v1/object/media/${remote}`]]);
       assert.deepEqual(stored(), [], "the local leftover was deleted too");
 

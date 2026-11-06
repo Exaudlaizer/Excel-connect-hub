@@ -38,6 +38,9 @@ Living status report. Update at the end of each work session.
 - `GET /applications/applicants` lists applicants for the caller's own jobs only, so an admin sees an empty list. Looks unintended for a moderation view but was not changed without your decision.
 - Uploads trust the client-declared MIME type (no magic-byte check); S-5 remains open until uploads move to object storage.
 
+- **Phase 4 so far (2026-11-06):** 4.1 revocable and renewing logins plus per-account login throttle; 4.2 audit log, operator alerts, monitoring, readiness, error screens, and a fix for stack traces reaching clients (S-18); 4.3 content-based image checks and pluggable storage with a Supabase driver written from the official docs. 334 backend tests. Still to do: 4.4 frontend security headers and CSP, 4.5 wrap-up docs.
+- **Environment change:** to read Supabase's docs, a personal Claude environment named `excel-connect-hub` was created (with your approval) allowing `supabase.com` and `supabase.github.io`, and this session was moved onto it. Your Default environment was not changed. You can delete that environment in settings if you no longer want those hosts allowed.
+
 ## Not verified
 
 - Never ran the API against Postgres or exercised any endpoint (no DB in this environment).

@@ -42,6 +42,8 @@ Environment variables (see `backend/.env.example`):
 | `SMTP_HOST/PORT/USER/PASS/FROM` | ✓ for real email | Unset = emails printed to the console |
 | `PUBLIC_API_ORIGIN` | ✓ behind TLS proxy | Used to build absolute upload URLs |
 | `UPLOAD_GRACE_MINUTES` | | Prune grace period |
+| `STORAGE_DRIVER` | | `local` (default) or `supabase` |
+| `SUPABASE_URL`, `SUPABASE_BUCKET`, `SUPABASE_SECRET_KEY` | with `supabase` | See "Image storage (Supabase)". The secret key is a secret: API host only |
 | `PAYMENTS_ENABLED`, `PAYMENT_PROVIDER` + that provider's credentials | only for payments | `PAYMENTS_ENABLED=true` needs a real provider (not `mock`) and **every** variable it lists (`requiredEnv`); the API refuses to boot otherwise. Leave payments off for a free launch |
 
 Commands:
@@ -56,7 +58,19 @@ npm start
 
 Health checks: `GET /health` (liveness) and `GET /health/ready` (readiness: database reachable). Use `/health/ready` for the host health check and uptime monitor.
 
-### Persistent uploads
+### Image storage (Supabase)
+
+Set `STORAGE_DRIVER=supabase` to keep uploaded images in Supabase Storage instead of on the API server's disk.
+
+1. In the Supabase dashboard, Storage, **New bucket**. Name it (e.g. `media`) and make it **Public** (images are public by design; the app serves them to everyone).
+2. Restrict it: allowed MIME types `image/jpeg, image/png, image/webp, image/gif, image/avif` and a 4 MB file size limit. (Bucket restrictions are a second lock; the API already checks type and size.)
+3. Settings, API Keys: copy the project URL and the **secret** key (`sb_secret_...`).
+4. On the API host set `STORAGE_DRIVER=supabase`, `SUPABASE_URL`, `SUPABASE_BUCKET`, `SUPABASE_SECRET_KEY`. The API refuses to boot if any is missing, if the URL is not `https://` in production, or if you paste a publishable key.
+5. Upload one image and delete it from the admin panel to confirm. **The driver was written from Supabase's documentation but has not been run against a real project.**
+
+The secret key bypasses every Supabase access rule. Keep it in the API's environment only; if it leaks, rotate it in the dashboard. Images uploaded before the switch stay on local disk and keep working; deleting a record removes each image from whichever store holds it. Orphaned files in a Supabase bucket are not pruned automatically yet (`npm run uploads:prune` covers local disk only).
+
+### Persistent uploads (local driver)
 
 Uploads are written to `backend/uploads/`. On platforms with ephemeral disks (most PaaS) attach a persistent volume, or move to object storage (planned) before real users upload images.
 

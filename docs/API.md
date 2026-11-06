@@ -93,7 +93,7 @@ Health (outside `/api`): `GET /health` is liveness (the process is up, cheap). `
 
 | Method & path | Access | Purpose |
 |---|---|---|
-| POST `/` | student, company, mentor, admin | Multipart field with one image ≤ 4 MB (jpeg/png/webp/gif/avif). Returns absolute URL |
+| POST `/` | student, company, mentor, admin | Multipart field `file`: one image ≤ 4 MB. The file's content must really be a JPEG, PNG, WebP, GIF or AVIF and agree with its declared type (`400` otherwise). Returns the public URL (`/uploads/...` on the local driver, a Supabase public URL on the supabase driver). `502` if the store cannot be reached |
 | DELETE `/:filename` | admin | Remove file |
 
 Files are served read-only at `/uploads/<name>` (7-day cache).

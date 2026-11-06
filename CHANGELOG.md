@@ -14,6 +14,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Security (Phase 4: uploads)
+- Uploaded images are now identified by their **content**, not the browser's label: JPEG/PNG/GIF/WebP/AVIF signatures are checked, a mismatch or a non-image is refused, and the stored extension comes from the detected type (SECURITY S-5).
+- **Pluggable image storage** (`backend/src/storage`): `STORAGE_DRIVER=local` (default, unchanged behaviour) or `supabase` (public Supabase Storage bucket, via its REST API with a server-side secret key). Deleting an ad removes its images from whichever store holds them, so switching drivers strands nothing. A half-configured driver fails at boot, never silently falls back to disk. Supabase failures give users a calm 502 and never expose the key.
+- `removeUploads` is now asynchronous (and still never throws).
+- Not verified against a real Supabase project.
+
 ### Security and operations (Phase 4: audit, alerts, monitoring)
 - **Audit log** (`audit_logs`, `GET /api/admin/audit`, Activity tab in the admin page): who approved or rejected content, edited or deleted other people's content, suspended an account, changed a role, changed the services directory, pinned a post, signed out everywhere, reset a password, or hit a payment that did not match its charge (S-7, S-8). Failure to write a row never fails the action.
 - **Operator alerts** by email (`ALERT_EMAILS`, else verified admins; one email per kind of problem per 15 minutes) for: a payment whose verified amount or currency differs from the charge, bad payment-webhook signatures, a misconfigured payment provider, repeated 5xx errors, and process crashes. Abandoned payments do not alert.

@@ -14,6 +14,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Security (Phase 4: frontend headers)
+- The frontend now sends a Content-Security-Policy and the standard security headers on every page; `X-Powered-By` is removed (SECURITY S-3). The policy is built from `NEXT_PUBLIC_API_URL`, so **that variable must be set in Vercel before the production build** (headers are fixed at build time).
+- `frontend/scripts/check-csp.mjs`: a browser-based check (Playwright) that loads public, signed-in and admin pages and reports any CSP violation, failed request, uncaught error or missing header. It includes a negative control proving the policy blocks foreign scripts, connections and frames. Running it found that the first draft of the policy would have blocked the site's Google Fonts; fixed by allowing exactly `fonts.googleapis.com` (styles) and `fonts.gstatic.com` (font files).
+- Known limit: `script-src` still allows `'unsafe-inline'`.
+
 ### Security (Phase 4: uploads)
 - Uploaded images are now identified by their **content**, not the browser's label: JPEG/PNG/GIF/WebP/AVIF signatures are checked, a mismatch or a non-image is refused, and the stored extension comes from the detected type (SECURITY S-5).
 - **Pluggable image storage** (`backend/src/storage`): `STORAGE_DRIVER=local` (default, unchanged behaviour) or `supabase` (public Supabase Storage bucket, via its REST API with a server-side secret key). Deleting an ad removes its images from whichever store holds them, so switching drivers strands nothing. A half-configured driver fails at boot, never silently falls back to disk. Supabase failures give users a calm 502 and never expose the key.

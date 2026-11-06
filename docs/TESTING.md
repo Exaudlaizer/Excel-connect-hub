@@ -24,6 +24,8 @@ Tests use Node's built-in runner (`node --test`) and Supertest; files live in `b
 | `uploads.test.js` | Generated filenames, SVG/HTML/exe/PDF refused, 4 MB cap, nothing written on refusal, admin-only delete; runs in a temp directory |
 | `billing.test.js`, `unit.test.js`, `pagination.test.js`, `ads.test.js`, `auth.test.js` | Payment flow and tampering, boot guards, provider registry, plan limits, registration atomicity, pagination clamps |
 
+**Browser checks (manual, not in CI because they need a Chromium download):** with the API and a production build of the site running, `cd frontend && CHECK_SITE=http://localhost:3000 CHECK_API=http://localhost:5000/api CHECK_ADMIN_EMAIL=... CHECK_ADMIN_PASSWORD=... node scripts/check-csp.mjs` loads public pages, a real login, signed-in pages and every admin tab, and fails on any CSP violation, failed request, uncaught error or missing security header. It includes a negative control (a script, a connection and a frame to a foreign origin must all be blocked). Run it after changing `frontend/next.config.mjs`, after adding a new third-party resource (fonts, analytics, images), and against the preview URL after a deploy. Also verified once by hand in the browser: token renewal across the two origins and the "Sign out on all devices" button.
+
 **Mutation checks done:** removing the admin rule on `GET /users` fails the matrix; removing the "approved only" filter fails 4 moderation tests; putting the roster back fails the course test; removing the amount check fails the billing test. Each was restored afterwards.
 
 **Still to do:** the real Selcom/ClickPesa drivers against their sandboxes, rate-limit behaviour with Redis, real SMTP, frontend end-to-end (Playwright), and a load check.

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const crypto = require("crypto");
 const cors = require("cors");
 const express = require("express");
 const helmet = require("helmet");
@@ -54,7 +55,10 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error("Not allowed by CORS"));
     },
-    credentials: true
+    credentials: true,
+    // Browsers hide non-standard response headers from scripts unless they are
+    // listed here; without it the client would never see a renewed token.
+    exposedHeaders: ["X-Renewed-Token"]
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -92,6 +96,25 @@ app.use(
     limit: 10,
     skipSuccessfulRequests: true,
     message: "Too many login attempts. Try again later."
+  })
+);
+// A second budget keyed on the ACCOUNT, because the per-IP one above cannot stop
+// an attacker who rotates addresses, and punishes a campus sharing one. Keyed on
+// a hash of the submitted email, so an address that has no account is throttled
+// in exactly the same way and the response never reveals whether one exists.
+// Malformed requests with no email share a single bucket.
+const accountKey = (req) =>
+  crypto.createHash("sha256").update(String(req.body?.email || "").trim().toLowerCase()).digest("hex");
+
+app.use(
+  "/api/auth/login",
+  makeLimiter({
+    name: "login-account",
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    skipSuccessfulRequests: true,
+    keyGenerator: accountKey,
+    message: "Too many login attempts for this account. Try again later."
   })
 );
 // Also per-IP, and the audience is students on shared campus wifi — twenty an

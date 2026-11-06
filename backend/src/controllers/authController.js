@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 const { sequelize } = require("../config/db");
-const { signToken } = require("../utils/tokens");
+const { revokeTokens, signToken } = require("../utils/tokens");
 const { issueCode } = require("./otpController");
 
 function publicUser(user) {
@@ -89,8 +89,18 @@ async function login(req, res, next) {
   }
 }
 
+// Cancels every login this account has, on every device, including this one.
+async function logoutAll(req, res, next) {
+  try {
+    await revokeTokens(req.user);
+    res.json({ message: "You have been signed out on every device." });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function me(req, res) {
   res.json({ user: publicUser(req.user) });
 }
 
-module.exports = { register, login, me, publicUser, SELF_SERVICE_ROLES };
+module.exports = { register, login, logoutAll, me, publicUser, SELF_SERVICE_ROLES };

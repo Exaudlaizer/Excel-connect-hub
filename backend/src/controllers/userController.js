@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const User = require("../models/User");
 const { publicUser } = require("./authController");
+const { revokeTokens } = require("../utils/tokens");
 const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function listUsers(req, res, next) {
@@ -90,6 +91,8 @@ async function updateUserStatus(req, res, next) {
     }
 
     await user.update({ status: req.body.status });
+    // Reinstating must not bring back logins from before the suspension.
+    await revokeTokens(user);
     res.json({ user });
   } catch (error) {
     next(error);
@@ -109,6 +112,7 @@ async function updateUserRole(req, res, next) {
     }
 
     await user.update({ role: req.body.role });
+    await revokeTokens(user);
     res.json({ user });
   } catch (error) {
     next(error);

@@ -14,6 +14,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Security (Phase 4: sessions)
+- Logins are revocable: each account has a `tokenVersion`, every token carries it, and a password reset, suspension (and reinstatement), role change or the new `POST /api/auth/logout-all` cancels all existing logins immediately (SECURITY S-2).
+- Logins now last 24 hours (was 7 days) and renew themselves: once a token is over 12 hours old the API returns a fresh one in `X-Renewed-Token` (exposed to browsers by CORS) and the frontend stores it, so active users are never signed out. A stolen token that is not being used dies within a day.
+- New per-account login throttle: 5 failed attempts per 15 minutes per email address, keyed on a hash of the email so unknown addresses are throttled identically and nothing is revealed (SECURITY S-4). The per-IP limiter stays.
+- "Sign out on all devices" button in Settings, Account.
+- Migration: `users.tokenVersion` (run `npm run db:migrate` on existing databases).
+
 ### Fixed (found by the new test suite)
 - Public course list, and create/edit/approve responses, no longer expose enrolled students' IDs (`enrolledStudents`); responses carry `enrolledCount` and the caller's own `isEnrolled` (S-14).
 - Editing an approved job now returns it to review, as ads and courses already did (S-15). Closing a job and admin edits are unaffected.

@@ -64,11 +64,12 @@ async function initRateLimitStore() {
  * Each limiter gets its own key prefix so the login budget and the OTP budget
  * are counted separately rather than sharing one bucket.
  */
-function makeLimiter({ windowMs, limit, message, name, skipSuccessfulRequests = false }) {
+function makeLimiter({ windowMs, limit, message, name, skipSuccessfulRequests = false, keyGenerator }) {
   return rateLimit({
     windowMs,
     limit,
     skipSuccessfulRequests,
+    ...(keyGenerator ? { keyGenerator } : {}),
     standardHeaders: true,
     legacyHeaders: false,
     ...(message ? { message: { message } } : {}),

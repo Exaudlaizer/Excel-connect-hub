@@ -104,6 +104,38 @@ function AppearanceTab() {
   );
 }
 
+// Cancels every login this account has, on every device including this one.
+function SignOutEverywhere() {
+  const { token, logout } = useAuth();
+  const [error, setError] = useState("");
+
+  const run = useMutation({
+    mutationFn: () => api<{ message: string }>("/auth/logout-all", { method: "POST", token, body: JSON.stringify({}) }),
+    onSuccess: () => logout(),
+    onError: (err: unknown) =>
+      setError(err instanceof ApiError ? err.message : "We could not sign you out everywhere. Please try again.")
+  });
+
+  return (
+    <section className="mt-10 max-w-2xl">
+      <h2 className="text-heading text-ink">Sign out everywhere</h2>
+      <p className="mt-1.5 text-sm leading-6 text-muted">
+        Lost a phone, or used a shared computer? This signs you out on every device, including this one. You can sign
+        back in straight away.
+      </p>
+      {error && (
+        <p className="alert alert-error mt-4" role="alert">
+          <span>{error}</span>
+        </p>
+      )}
+      <button type="button" onClick={() => run.mutate()} disabled={run.isPending} className="btn btn-secondary focus-ring mt-4">
+        {run.isPending && <Loader2 className="animate-spin" size={16} aria-hidden />}
+        {run.isPending ? "Signing out…" : "Sign out on all devices"}
+      </button>
+    </section>
+  );
+}
+
 function AccountTab({ onVerify }: { onVerify: () => void }) {
   const { user, token, applyUser } = useAuth();
   const [saved, setSaved] = useState(false);
@@ -233,7 +265,12 @@ export default function SettingsPage() {
 
       <div key={tab} className="animate-fade-rise">
         {tab === "appearance" && <AppearanceTab />}
-        {tab === "account" && <AccountTab onVerify={() => setTab("verification")} />}
+        {tab === "account" && (
+          <>
+            <AccountTab onVerify={() => setTab("verification")} />
+            <SignOutEverywhere />
+          </>
+        )}
         {tab === "verification" && <VerificationPanel />}
         {tab === "billing" && <BillingPanel />}
       </div>

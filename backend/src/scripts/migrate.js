@@ -74,6 +74,11 @@ step(
 );
 
 step(
+  "users: add tokenVersion",
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 0;`
+);
+
+step(
   "users: add preferences",
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS preferences JSONB NOT NULL DEFAULT '{}'::jsonb;`
 );

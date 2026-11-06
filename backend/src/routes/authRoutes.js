@@ -1,6 +1,6 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { login, me, register, SELF_SERVICE_ROLES } = require("../controllers/authController");
+const { login, logoutAll, me, register, SELF_SERVICE_ROLES } = require("../controllers/authController");
 const { forgotPassword, resetPassword } = require("../controllers/passwordResetController");
 const {
   confirmCode,
@@ -90,5 +90,6 @@ router.post(
 );
 
 router.get("/me", protect, me);
+router.post("/logout-all", protect, logoutAll);
 
 module.exports = router;

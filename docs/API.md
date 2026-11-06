@@ -21,6 +21,7 @@ Health: `GET /health` (outside `/api`) returns `{ status: "ok" }`.
 | POST `/verification/request-public` | 🌐 | Send email code by address | 60/h |
 | POST `/verification/confirm-public` | 🌐 | Confirm email code | 30/15 min |
 | GET `/me` | 🔐 | Current user | |
+| POST `/logout-all` | 🔐 | Cancels every login on every device (including this one) | |
 
 ## Users: `/users`
 
@@ -116,6 +117,8 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 | GET `/analytics` | admin | Platform counts and queues |
 
 ## Behaviour notes
+
+- **Sessions.** A login token lasts 24 h (`JWT_EXPIRES_IN`). When a request arrives with a token more than 12 h old, the response carries a fresh token in the `X-Renewed-Token` header and the client should store it. Tokens are cancelled by a password reset, suspension, role change or `POST /auth/logout-all` (a `401` follows). `POST /auth/login` is limited to 5 failures per 15 min per email address (`429`), on top of the per-IP limit.
 
 - `GET/POST/PATCH /courses` responses never include the roster; each course has `enrolledCount` and `isEnrolled` (the caller's own state).
 - `PATCH /jobs/:id`: an owner's content change returns an approved job to `pending`; `{ "status": "closed" }` does not. Admin edits are not re-queued.

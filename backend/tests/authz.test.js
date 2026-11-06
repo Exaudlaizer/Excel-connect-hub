@@ -33,6 +33,7 @@ const SPEC = {
   "POST /api/auth/verification/request-public": "public",
   "POST /api/auth/verification/confirm-public": "public",
   "GET /api/auth/me": "auth",
+  "POST /api/auth/logout-all": "auth",
   // users
   "GET /api/users": ["admin"],
   "PATCH /api/users/me": "auth",
@@ -128,6 +129,17 @@ describe("authorization matrix", { skip: !hasDb && "set TEST_DATABASE_URL to run
     actors.suspended = suspended;
   });
   after(closeDb);
+
+  // Some routes change an account's session state (e.g. "sign out everywhere"
+  // revokes the caller's tokens). Give every actor a fresh token before each test
+  // so the order of routes in the matrix can never matter.
+  beforeEach(async () => {
+    const { signToken } = load();
+    for (const actor of Object.values(actors)) {
+      await actor.user.reload();
+      actor.auth = { Authorization: `Bearer ${signToken(actor.user)}` };
+    }
+  });
 
   test("every registered route is in the spec, and every spec entry is a real route", () => {
     const registered = registeredRoutes(app);

@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const { Op } = require("sequelize");
 const PasswordResetToken = require("../models/PasswordResetToken");
 const User = require("../models/User");
+const { revokeTokens } = require("../utils/tokens");
 const { passwordResetTemplate, sendMail } = require("../utils/mailer");
 
 const TOKEN_TTL_MINUTES = 60;
@@ -82,6 +83,9 @@ async function resetPassword(req, res, next) {
 
     // The User beforeUpdate hook re-hashes the password on change.
     await record.user.update({ password });
+    // Anyone holding a login from before the reset (including whoever forced it)
+    // is signed out.
+    await revokeTokens(record.user);
 
     // Burn the token, and any siblings, so a link cannot be replayed.
     await PasswordResetToken.update(

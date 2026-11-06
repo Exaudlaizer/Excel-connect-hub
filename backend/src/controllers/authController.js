@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 const { sequelize } = require("../config/db");
 const { revokeTokens, signToken } = require("../utils/tokens");
+const { recordAudit } = require("../utils/audit");
 const { issueCode } = require("./otpController");
 
 function publicUser(user) {
@@ -93,6 +94,7 @@ async function login(req, res, next) {
 async function logoutAll(req, res, next) {
   try {
     await revokeTokens(req.user);
+    await recordAudit(req, "auth.logout_all", { type: "user", id: req.user.id });
     res.json({ message: "You have been signed out on every device." });
   } catch (error) {
     next(error);

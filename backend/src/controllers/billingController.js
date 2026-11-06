@@ -4,6 +4,8 @@ const Subscription = require("../models/Subscription");
 const User = require("../models/User");
 const { paymentsEnabled } = require("../config/billing");
 const { getProvider, getProviderByName, newTxRef } = require("../payments");
+const { alertOperators } = require("../utils/alerts");
+const { recordAudit } = require("../utils/audit");
 
 /**
  * Subscriptions and payments.
@@ -167,6 +169,28 @@ async function grantFromReference({ txRef, providerId }) {
     verification.currency === payment.currency;
 
   if (!amountMatches) {
+    // The gateway says the money arrived but the amount or currency is not what
+    // this reference was charged for. That is what a tampered redirect or a
+    // forged event looks like, so a human should hear about it. (A payment the
+    // gateway reports as not completed, e.g. abandoned, is routine and is not
+    // alerted.)
+    if (verification.ok) {
+      const facts = {
+        txRef: payment.txRef,
+        planKey: payment.planKey,
+        provider: payment.provider,
+        expectedMinor: payment.amountMinor,
+        verifiedMinor: verification.amountMinor,
+        expectedCurrency: payment.currency,
+        verifiedCurrency: verification.currency
+      };
+      await recordAudit(null, "billing.verification_failed", { type: "payment", id: payment.id }, facts);
+      alertOperators({
+        key: "payment-verification-failed",
+        subject: "A payment did not match what was charged",
+        text: `A payment was reported as completed, but its amount or currency does not match the charge, so no plan was granted.\n\nReference: ${facts.txRef}\nPlan: ${facts.planKey}\nProvider: ${facts.provider}\nCharged: ${facts.expectedMinor} ${facts.expectedCurrency} (minor units)\nVerified: ${facts.verifiedMinor} ${facts.verifiedCurrency}\n\nCheck the payment in the gateway dashboard.`
+      });
+    }
     await payment.update({
       status: "failed",
       meta: { ...payment.meta, verification }
@@ -234,11 +258,21 @@ async function webhook(req, res) {
     // Misconfiguration is not the gateway's fault; say so instead of pretending
     // the event was handled.
     console.error("Billing webhook: payment provider unavailable:", error.message);
+    alertOperators({
+      key: "payment-provider-unavailable",
+      subject: "Payment webhook received but the provider is misconfigured",
+      text: `A payment webhook arrived but the payment provider cannot be used: ${error.message}\n\nPayments cannot be confirmed until this is fixed.`
+    });
     return res.status(503).json({ message: "Payment provider unavailable" });
   }
 
   try {
     if (!provider.verifyWebhook(req)) {
+      alertOperators({
+        key: "webhook-signature",
+        subject: "Payment webhook with an invalid signature",
+        text: `A request to the payment webhook failed signature verification and was rejected.\n\nProvider: ${provider.name}\nFrom: ${req.ip}\n\nIf this keeps happening, someone may be probing the endpoint, or the webhook secret was changed in the gateway dashboard.`
+      });
       return res.status(401).json({ message: "Invalid signature" });
     }
 
@@ -253,6 +287,11 @@ async function webhook(req, res) {
     // Even on an internal error, acknowledge so the provider does not hammer us;
     // the failure is logged for reconciliation.
     console.error("Billing webhook error:", error.message);
+    alertOperators({
+      key: "webhook-error",
+      subject: "Error while handling a payment webhook",
+      text: `Handling a payment webhook failed: ${error.message}\n\nThe gateway was told it was received. Check the payment in its dashboard and reconcile.`
+    });
     res.json({ received: true });
   }
 }

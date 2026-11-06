@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const Job = require("../models/Job");
 const User = require("../models/User");
 const { buildMeta, readPagination } = require("../utils/pagination");
+const { recordAudit } = require("../utils/audit");
 
 // Content fields a company may set on its own listing. `status` and `companyId`
 // are excluded on purpose: spreading req.body into create()/update() would let a
@@ -115,6 +116,7 @@ async function updateJob(req, res, next) {
     }
 
     await job.update(updates);
+    if (isAdmin && !ownsJob) await recordAudit(req, "job.update", { type: "job", id: job.id }, { fields: Object.keys(updates), ownerId: job.companyId });
     res.json({ job });
   } catch (error) {
     next(error);
@@ -131,6 +133,7 @@ async function deleteJob(req, res, next) {
     }
 
     await job.destroy();
+    if (job.companyId !== req.user.id) await recordAudit(req, "job.delete", { type: "job", id: job.id }, { title: job.title, ownerId: job.companyId });
     res.json({ message: "Listing removed" });
   } catch (error) {
     next(error);
@@ -141,7 +144,9 @@ async function approveJob(req, res, next) {
   try {
     const job = await Job.findByPk(req.params.id);
     if (!job) return res.status(404).json({ message: "Job not found" });
+    const from = job.status;
     await job.update({ status: req.body.status });
+    await recordAudit(req, "job.status", { type: "job", id: job.id }, { from, to: job.status, title: job.title });
     res.json({ job });
   } catch (error) {
     next(error);

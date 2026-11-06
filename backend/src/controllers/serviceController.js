@@ -1,5 +1,6 @@
 const Service = require("../models/Service");
 const { buildMeta, readPagination } = require("../utils/pagination");
+const { recordAudit } = require("../utils/audit");
 
 const EDITABLE_FIELDS = [
   "name",
@@ -47,6 +48,7 @@ async function createService(req, res, next) {
     });
 
     const service = await Service.create(payload);
+    await recordAudit(req, "service.create", { type: "service", id: service.id }, { name: service.name });
     res.status(201).json({ service });
   } catch (error) {
     next(error);
@@ -64,6 +66,7 @@ async function updateService(req, res, next) {
     });
 
     await service.update(updates);
+    await recordAudit(req, "service.update", { type: "service", id: service.id }, { fields: Object.keys(updates) });
     res.json({ service });
   } catch (error) {
     next(error);
@@ -76,6 +79,7 @@ async function deleteService(req, res, next) {
     if (!service) return res.status(404).json({ message: "Service not found" });
 
     await service.destroy();
+    await recordAudit(req, "service.delete", { type: "service", id: service.id }, { name: service.name });
     res.json({ message: "Service removed" });
   } catch (error) {
     next(error);

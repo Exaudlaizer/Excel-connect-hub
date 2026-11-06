@@ -6,7 +6,7 @@ Base URL: `http://localhost:5000/api` (local). Responses are JSON. Errors look l
 
 List endpoints accept `?page=` (1-based) and `?limit=` (default 20, max 100) and return `{ <items>, pagination }`.
 
-Health: `GET /health` (outside `/api`) returns `{ status: "ok" }`.
+Health (outside `/api`): `GET /health` is liveness (the process is up, cheap). `GET /health/ready` is readiness: `200 {"database":"up"}` or `503 {"database":"down"}`; point uptime monitors and the host's health check at this one. Every response carries `X-Request-Id` (a safe client-supplied id is echoed back); quote it when reporting a problem.
 
 ## Auth: `/auth`
 
@@ -115,6 +115,7 @@ Files are served read-only at `/uploads/<name>` (7-day cache).
 | Method & path | Access | Purpose |
 |---|---|---|
 | GET `/analytics` | admin | Platform counts and queues |
+| GET `/audit` | admin | Activity trail, newest first. Filters: `action`, `actorId`, `targetType`, `targetId`; paginated (default 50) |
 
 ## Behaviour notes
 

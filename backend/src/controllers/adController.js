@@ -4,6 +4,7 @@ const User = require("../models/User");
 const { removeUploads } = require("./uploadController");
 const { buildMeta, readPagination } = require("../utils/pagination");
 const { limitsFor } = require("../utils/entitlements");
+const { recordAudit } = require("../utils/audit");
 
 // Explicit whitelist. Spreading req.body into create() would let a caller set
 // `id`, `ownerId`, `createdAt`, or any other column the model happens to have.
@@ -124,6 +125,7 @@ async function updateAd(req, res, next) {
 
     await ad.update(updates);
     removeUploads(orphaned);
+    if (isAdmin && ad.ownerId !== req.user.id) await recordAudit(req, "ad.update", { type: "ad", id: ad.id }, { fields: Object.keys(updates), ownerId: ad.ownerId });
 
     res.json({ ad });
   } catch (error) {
@@ -142,6 +144,7 @@ async function deleteAd(req, res, next) {
 
     await ad.destroy();
     removeUploads([ad.imageUrl, ad.logoUrl]);
+    if (ad.ownerId !== req.user.id) await recordAudit(req, "ad.delete", { type: "ad", id: ad.id }, { title: ad.title, ownerId: ad.ownerId });
 
     res.json({ message: "Advertisement removed" });
   } catch (error) {
@@ -153,7 +156,9 @@ async function updateAdStatus(req, res, next) {
   try {
     const ad = await Ad.findByPk(req.params.id);
     if (!ad) return res.status(404).json({ message: "Advertisement not found" });
+    const from = ad.status;
     await ad.update({ status: req.body.status });
+    await recordAudit(req, "ad.status", { type: "ad", id: ad.id }, { from, to: ad.status, title: ad.title });
     res.json({ ad });
   } catch (error) {
     next(error);

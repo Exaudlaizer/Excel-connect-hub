@@ -19,6 +19,8 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const billingRoutes = require("./routes/billingRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const requestId = require("./middleware/requestId");
+const { sequelize } = require("./config/db");
 const { assertEnv } = require("./config/env");
 const { UPLOAD_DIR } = require("./controllers/uploadController");
 require("./models");
@@ -33,6 +35,8 @@ const app = express();
 if (process.env.TRUST_PROXY) {
   app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
 }
+
+app.use(requestId);
 
 app.use(
   helmet({
@@ -58,7 +62,7 @@ app.use(
     credentials: true,
     // Browsers hide non-standard response headers from scripts unless they are
     // listed here; without it the client would never see a renewed token.
-    exposedHeaders: ["X-Renewed-Token"]
+    exposedHeaders: ["X-Renewed-Token", "X-Request-Id"]
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -81,8 +85,24 @@ app.use(
   })
 );
 
+// Liveness: the process is up. Cheap, safe to poll every few seconds.
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "excel-connect-hub-api" });
+});
+
+// Readiness: the process can actually serve requests, i.e. the database answers.
+// Point uptime monitors and the host's health check here so an outage of the
+// database is noticed, not just an outage of the process.
+app.get("/health/ready", async (_req, res) => {
+  try {
+    await Promise.race([
+      sequelize.query("SELECT 1"),
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error("database check timed out")), 3000).unref())
+    ]);
+    res.json({ status: "ok", database: "up" });
+  } catch (_error) {
+    res.status(503).json({ status: "unavailable", database: "down" });
+  }
 });
 
 // Credential endpoints get a much tighter budget than the global limiter,

@@ -37,6 +37,8 @@ Environment variables (see `backend/.env.example`):
 | `CLIENT_ORIGIN` | ✓ | Exact frontend origin(s), comma-separated |
 | `TRUST_PROXY` | ✓ behind a proxy | Hops to trust (e.g. `1`); otherwise all users share one rate-limit bucket |
 | `REDIS_URL` | recommended | Needed once there is more than one instance |
+| `ALERT_EMAILS` | recommended | Comma-separated addresses emailed on payment mismatches, bad webhook signatures, repeated server errors and crashes. Empty = every active admin with a verified email. Needs working SMTP to actually deliver |
+| `SENTRY_DSN`, `SENTRY_RELEASE` | optional | Error reporting; off when `SENTRY_DSN` is unset |
 | `SMTP_HOST/PORT/USER/PASS/FROM` | ✓ for real email | Unset = emails printed to the console |
 | `PUBLIC_API_ORIGIN` | ✓ behind TLS proxy | Used to build absolute upload URLs |
 | `UPLOAD_GRACE_MINUTES` | | Prune grace period |
@@ -52,7 +54,7 @@ npm run seed:admin -- --email=… --password=… --name="…"   # once
 npm start
 ```
 
-Health check: `GET /health`.
+Health checks: `GET /health` (liveness) and `GET /health/ready` (readiness: database reachable). Use `/health/ready` for the host health check and uptime monitor.
 
 ### Persistent uploads
 

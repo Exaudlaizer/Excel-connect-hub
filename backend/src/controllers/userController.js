@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const User = require("../models/User");
 const { publicUser } = require("./authController");
 const { revokeTokens } = require("../utils/tokens");
+const { recordAudit } = require("../utils/audit");
 const { buildMeta, readPagination } = require("../utils/pagination");
 
 async function listUsers(req, res, next) {
@@ -90,9 +91,11 @@ async function updateUserStatus(req, res, next) {
       return res.status(400).json({ message: "You cannot change your own account status" });
     }
 
+    const from = user.status;
     await user.update({ status: req.body.status });
     // Reinstating must not bring back logins from before the suspension.
     await revokeTokens(user);
+    await recordAudit(req, "user.status", { type: "user", id: user.id }, { from, to: user.status, email: user.email });
     res.json({ user });
   } catch (error) {
     next(error);
@@ -111,8 +114,10 @@ async function updateUserRole(req, res, next) {
       return res.status(400).json({ message: "You cannot change your own role" });
     }
 
+    const from = user.role;
     await user.update({ role: req.body.role });
     await revokeTokens(user);
+    await recordAudit(req, "user.role", { type: "user", id: user.id }, { from, to: user.role, email: user.email });
     res.json({ user });
   } catch (error) {
     next(error);

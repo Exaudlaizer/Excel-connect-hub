@@ -14,6 +14,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are no
 - Documentation set: `docs/PRD.md`, `ARCHITECTURE.md`, `ARCHITECTURE_DESIGN.md`, `FEATURES.md`, `PLAN.md`, `PROGRESS.md`, `API.md`, `DATABASE.md`, `DEPLOYMENT.md`, `TESTING.md`, plus root `AGENT.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`.
 - Boot-time guard: the API refuses to start with `PAYMENTS_ENABLED=true` unless `FLW_PUBLIC_KEY`, `FLW_SECRET_KEY` and `FLW_WEBHOOK_HASH` are set (prevents the mock payment driver from granting paid plans).
 
+### Security and operations (Phase 4: audit, alerts, monitoring)
+- **Audit log** (`audit_logs`, `GET /api/admin/audit`, Activity tab in the admin page): who approved or rejected content, edited or deleted other people's content, suspended an account, changed a role, changed the services directory, pinned a post, signed out everywhere, reset a password, or hit a payment that did not match its charge (S-7, S-8). Failure to write a row never fails the action.
+- **Operator alerts** by email (`ALERT_EMAILS`, else verified admins; one email per kind of problem per 15 minutes) for: a payment whose verified amount or currency differs from the charge, bad payment-webhook signatures, a misconfigured payment provider, repeated 5xx errors, and process crashes. Abandoned payments do not alert.
+- **Monitoring:** optional Sentry (`SENTRY_DSN`; reports carry the error and stack only), a request id on every response and error log (`X-Request-Id`), errors logged as one JSON line, `GET /health/ready` (503 when the database is down), and a crash handler that logs, alerts, flushes and exits 1.
+- Friendly error screens (`app/error.tsx`, `app/global-error.tsx`).
+- **Fixed:** stack traces were sent to clients unless `NODE_ENV` was exactly `production`; now only for `development` and `test` (S-18).
+
 ### Security (Phase 4: sessions)
 - Logins are revocable: each account has a `tokenVersion`, every token carries it, and a password reset, suspension (and reinstatement), role change or the new `POST /api/auth/logout-all` cancels all existing logins immediately (SECURITY S-2).
 - Logins now last 24 hours (was 7 days) and renew themselves: once a token is over 12 hours old the API returns a fresh one in `X-Renewed-Token` (exposed to browsers by CORS) and the frontend stores it, so active users are never signed out. A stolen token that is not being used dies within a day.

@@ -1,4 +1,5 @@
 const Ad = require("./Ad");
+const AuditLog = require("./AuditLog");
 const Application = require("./Application");
 const CommunityPost = require("./CommunityPost");
 const CommunityReply = require("./CommunityReply");
@@ -11,6 +12,11 @@ const PasswordResetToken = require("./PasswordResetToken");
 const Service = require("./Service");
 const Subscription = require("./Subscription");
 const User = require("./User");
+
+// The trail outlives the account that acted: deleting a user nulls the link, the
+// email snapshot on the row still says who it was.
+User.hasMany(AuditLog, { foreignKey: "actorId", as: "auditLogs", onDelete: "SET NULL" });
+AuditLog.belongsTo(User, { foreignKey: "actorId", as: "actor" });
 
 User.hasMany(Job, { foreignKey: "companyId", as: "jobs" });
 Job.belongsTo(User, { foreignKey: "companyId", as: "company" });
@@ -59,6 +65,7 @@ Payment.belongsTo(Plan, { foreignKey: "planKey", targetKey: "key", as: "plan" })
 
 module.exports = {
   Ad,
+  AuditLog,
   Application,
   CommunityPost,
   CommunityReply,

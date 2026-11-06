@@ -3,6 +3,7 @@ const CommunityPost = require("../models/CommunityPost");
 const CommunityReply = require("../models/CommunityReply");
 const User = require("../models/User");
 const { buildMeta, readPagination } = require("../utils/pagination");
+const { recordAudit } = require("../utils/audit");
 
 const AUTHOR_ATTRIBUTES = ["id", "name", "role"];
 
@@ -107,6 +108,7 @@ async function deletePost(req, res, next) {
     }
 
     await post.destroy();
+    if (post.authorId !== req.user.id) await recordAudit(req, "community.post.delete", { type: "post", id: post.id }, { title: post.title, authorId: post.authorId });
     res.json({ message: "Post removed" });
   } catch (error) {
     next(error);
@@ -119,6 +121,7 @@ async function pinPost(req, res, next) {
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     await post.update({ pinned: Boolean(req.body.pinned) });
+    await recordAudit(req, "community.pin", { type: "post", id: post.id }, { pinned: post.pinned });
     res.json({ post });
   } catch (error) {
     next(error);
@@ -155,6 +158,7 @@ async function deleteReply(req, res, next) {
     }
 
     await reply.destroy();
+    if (reply.authorId !== req.user.id) await recordAudit(req, "community.reply.delete", { type: "reply", id: reply.id }, { postId: reply.postId, authorId: reply.authorId });
     res.json({ message: "Reply removed" });
   } catch (error) {
     next(error);

@@ -90,7 +90,8 @@ const SPEC = {
   "POST /api/billing/cancel": "auth",
   "POST /api/billing/webhook": "public",
   // admin
-  "GET /api/admin/analytics": ["admin"]
+  "GET /api/admin/analytics": ["admin"],
+  "GET /api/admin/audit": ["admin"]
 };
 
 // Reads the routes the Express app really has, so the spec can be checked for

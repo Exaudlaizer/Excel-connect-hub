@@ -1,4 +1,6 @@
 const Ad = require("../models/Ad");
+const AuditLog = require("../models/AuditLog");
+const { buildMeta, readPagination } = require("../utils/pagination");
 const Application = require("../models/Application");
 const CommunityPost = require("../models/CommunityPost");
 const Course = require("../models/Course");
@@ -61,4 +63,26 @@ async function analytics(_req, res, next) {
   }
 }
 
-module.exports = { analytics };
+// The activity trail, newest first. Filter by exact action, actorId, targetType
+// or targetId. Read-only: nothing here can change a row.
+async function listAudit(req, res, next) {
+  try {
+    const where = {};
+    ["action", "actorId", "targetType", "targetId"].forEach((field) => {
+      if (req.query[field]) where[field] = String(req.query[field]);
+    });
+
+    const { page, limit, offset } = readPagination(req.query, { defaultLimit: 50 });
+    const { rows, count } = await AuditLog.findAndCountAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset
+    });
+    res.json({ logs: rows, pagination: buildMeta({ page, limit, total: count }) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { analytics, listAudit };
